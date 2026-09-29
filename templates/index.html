@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Predictive Maintenance AI</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <div class="logo">
+            <div class="logo-icon">⚙</div>
+
+            <div>
+                <h2>PredictAI</h2>
+                <span>Maintenance System</span>
+            </div>
+        </div>
+
+        <nav>
+            <a href="#dashboard" class="active">
+                <span>▦</span> Dashboard
+            </a>
+
+            <a href="#prediction">
+                <span>⌁</span> Prediction
+            </a>
+
+            <a href="#analytics">
+                <span>◫</span> Analytics
+            </a>
+
+            <a href="#models">
+                <span>◇</span> Models
+            </a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <div class="status-dot"></div>
+            <div>
+                <b>System Online</b>
+                <small>AI model ready</small>
+            </div>
+        </div>
+
+    </aside>
+
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+
+        <!-- TOP BAR -->
+        <header class="topbar">
+
+            <div>
+                <p class="small-title">INDUSTRIAL AI MONITORING</p>
+                <h1>Machine Health Dashboard</h1>
+            </div>
+
+            <div class="model-badge">
+                <span></span>
+                XGBoost Model
+            </div>
+
+        </header>
+
+
+        <!-- DASHBOARD -->
+        <section id="dashboard">
+
+            <!-- STAT CARDS -->
+            <div class="stats-grid">
+
+                <div class="stat-card">
+                    <div class="stat-icon blue">🌡️</div>
+
+                    <div>
+                        <p>Air Temperature</p>
+
+                        <h2>
+                            {% if air_temperature %}
+                                {{ air_temperature }}
+                            {% else %}
+                                --
+                            {% endif %}
+                            <small>K</small>
+                        </h2>
+                    </div>
+                </div>
+
+
+                <div class="stat-card">
+                    <div class="stat-icon purple">⚙️</div>
+
+                    <div>
+                        <p>Rotational Speed</p>
+
+                        <h2>
+                            {% if rotational_speed %}
+                                {{ rotational_speed }}
+                            {% else %}
+                                --
+                            {% endif %}
+                            <small>RPM</small>
+                        </h2>
+                    </div>
+                </div>
+
+
+                <div class="stat-card">
+                    <div class="stat-icon orange">🔧</div>
+
+                    <div>
+                        <p>Torque</p>
+
+                        <h2>
+                            {% if torque %}
+                                {{ torque }}
+                            {% else %}
+                                --
+                            {% endif %}
+                            <small>Nm</small>
+                        </h2>
+                    </div>
+                </div>
+
+
+                <div class="stat-card">
+                    <div class="stat-icon green">🛠️</div>
+
+                    <div>
+                        <p>Tool Wear</p>
+
+                        <h2>
+                            {% if tool_wear %}
+                                {{ tool_wear }}
+                            {% else %}
+                                --
+                            {% endif %}
+                            <small>min</small>
+                        </h2>
+                    </div>
+                </div>
+
+            </div>
+
+
+            <!-- PREDICTION SECTION -->
+            <div class="dashboard-grid" id="prediction">
+
+                <!-- INPUT PANEL -->
+                <div class="panel input-panel">
+
+                    <div class="panel-heading">
+                        <div>
+                            <span class="section-label">PREDICTION</span>
+                            <h2>Machine Parameters</h2>
+                        </div>
+
+                        <div class="machine-icon">⚙</div>
+                    </div>
+
+
+                    <form method="POST">
+
+                        <div class="input-grid">
+
+                            <div class="input-group">
+
+                                <label>
+                                    Machine Type
+                                </label>
+
+                                <select name="machine_type" required>
+
+                                    <option value="L">L — Low</option>
+                                    <option value="M" selected>M — Medium</option>
+                                    <option value="H">H — High</option>
+
+                                </select>
+
+                            </div>
+
+
+                            <div class="input-group">
+
+                                <label>
+                                    Air Temperature
+                                    <span>[K]</span>
+                                </label>
+
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    name="air_temperature"
+                                    placeholder="e.g. 300"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <div class="input-group">
+
+                                <label>
+                                    Process Temperature
+                                    <span>[K]</span>
+                                </label>
+
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    name="process_temperature"
+                                    placeholder="e.g. 310"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <div class="input-group">
+
+                                <label>
+                                    Rotational Speed
+                                    <span>[RPM]</span>
+                                </label>
+
+                                <input
+                                    type="number"
+                                    name="rotational_speed"
+                                    placeholder="e.g. 1500"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <div class="input-group">
+
+                                <label>
+                                    Torque
+                                    <span>[Nm]</span>
+                                </label>
+
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    name="torque"
+                                    placeholder="e.g. 40"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <div class="input-group">
+
+                                <label>
+                                    Tool Wear
+                                    <span>[min]</span>
+                                </label>
+
+                                <input
+                                    type="number"
+                                    name="tool_wear"
+                                    placeholder="e.g. 100"
+                                    required
+                                >
+
+                            </div>
+
+                        </div>
+
+
+                        <button type="submit" class="predict-btn">
+
+                            <span>Run  Prediction</span>
+
+                            <span class="arrow">→</span>
+
+                        </button>
+
+                    </form>
+
+                </div>
+
+
+                <!-- RESULT PANEL -->
+                <div class="panel result-panel">
+
+                    <div class="panel-heading">
+
+                        <div>
+                            <span class="section-label">AI RESULT</span>
+                            <h2>Machine Health</h2>
+                        </div>
+
+                        <div class="ai-icon">✦</div>
+
+                    </div>
+
+
+                    {% if result %}
+
+                    <div class="result-content">
+
+                        {% if result == "Machine Failure" %}
+
+                        <div class="result-circle danger">
+                            ⚠
+                        </div>
+
+                        <h3 class="danger-text">
+                            Machine Failure
+                        </h3>
+
+                        <p class="result-message">
+                            The model predicts a possible machine failure.
+                        </p>
+
+                        {% else %}
+
+                        <div class="result-circle safe">
+                            ✓
+                        </div>
+
+                        <h3 class="safe-text">
+                            No Machine Failure
+                        </h3>
+
+                        <p class="result-message">
+                            The machine is predicted to operate normally.
+                        </p>
+
+                        {% endif %}
+
+
+                        <div class="probability-box">
+
+                            <div class="probability-header">
+                                <span>Failure Probability</span>
+
+                                <strong>
+                                    {{ "%.2f"|format(probability) }}%
+                                </strong>
+                            </div>
+
+                            <div class="progress">
+                                <div
+                                    class="progress-bar"
+                                    style="width: {{ probability }}%;">
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    {% else %}
+
+                    <div class="empty-result">
+
+                        <div class="empty-icon">
+                            ✦
+                        </div>
+
+                        <h3>Ready for Prediction</h3>
+
+                        <p>
+                            Enter machine parameters and run the AI model
+                            to analyze machine health.
+                        </p>
+
+                    </div>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ANALYTICS -->
+        {% if result %}
+
+        <section id="analytics">
+
+            <div class="section-header">
+
+                <div>
+                    <span class="section-label">ANALYTICS</span>
+
+                    <h2>Machine & Model Analytics</h2>
+                </div>
+
+                <span class="data-badge">
+                    Live Prediction
+                </span>
+
+            </div>
+
+
+            <div class="charts-grid">
+
+                <!-- SENSOR GRAPH -->
+                <div class="chart-panel">
+
+                    <div class="chart-title">
+
+                        <div>
+                            <h3>Machine Sensor Values</h3>
+                            <p>Current input parameters</p>
+                        </div>
+
+                        <span>📊</span>
+
+                    </div>
+
+                    <canvas id="sensorChart"></canvas>
+
+                </div>
+
+
+                <!-- MODEL GRAPH -->
+                <div class="chart-panel">
+
+                    <div class="chart-title">
+
+                        <div>
+                            <h3>Model Accuracy</h3>
+                            <p>Performance comparison</p>
+                        </div>
+
+                        <span>📈</span>
+
+                    </div>
+
+                    <canvas id="modelChart"></canvas>
+
+                </div>
+
+            </div>
+
+
+            <!-- FEATURE IMPORTANCE -->
+            <div class="chart-panel full-chart">
+
+                <div class="chart-title">
+
+                    <div>
+                        <h3>Feature Importance — XGBoost</h3>
+
+                        <p>
+                            Relative contribution of input features
+                        </p>
+                    </div>
+
+                    <span>🎯</span>
+
+                </div>
+
+                <canvas id="featureChart"></canvas>
+
+            </div>
+
+        </section>
+
+
+        <!-- MODEL PERFORMANCE -->
+        <section id="models">
+
+            <div class="section-header">
+
+                <div>
+                    <span class="section-label">MODEL EVALUATION</span>
+
+                    <h2>Performance Summary</h2>
+                </div>
+
+            </div>
+
+
+            <div class="metrics-grid">
+
+                <div class="metric-card">
+                    <span>Accuracy</span>
+                    <strong>98.70%</strong>
+                    <small>XGBoost</small>
+                </div>
+
+                <div class="metric-card">
+                    <span>Precision</span>
+                    <strong>90.38%</strong>
+                    <small>XGBoost</small>
+                </div>
+
+                <div class="metric-card">
+                    <span>Recall</span>
+                    <strong>69.12%</strong>
+                    <small>XGBoost</small>
+                </div>
+
+                <div class="metric-card">
+                    <span>F1 Score</span>
+                    <strong>78.33%</strong>
+                    <small>XGBoost</small>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <script>
+
+            /* ---------------- SENSOR CHART ---------------- */
+
+            new Chart(
+                document.getElementById("sensorChart"),
+                {
+                    type: "bar",
+
+                    data: {
+
+                        labels: [
+                            "Air Temp",
+                            "Process Temp",
+                            "Speed",
+                            "Torque",
+                            "Tool Wear"
+                        ],
+
+                        datasets: [{
+                            label: "Current Value",
+
+                            data: [
+                                {{ air_temperature }},
+                                {{ process_temperature }},
+                                {{ rotational_speed }},
+                                {{ torque }},
+                                {{ tool_wear }}
+                            ]
+                        }]
+
+                    },
+
+                    options: {
+
+                        responsive: true,
+
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+
+                    }
+
+                }
+            );
+
+
+            /* ---------------- MODEL CHART ---------------- */
+
+            new Chart(
+                document.getElementById("modelChart"),
+                {
+                    type: "bar",
+
+                    data: {
+
+                        labels: [
+                            "Logistic",
+                            "Decision Tree",
+                            "Random Forest",
+                            "XGBoost",
+                            "Voting Hybrid",
+                            "Balanced XGB"
+                        ],
+
+                        datasets: [{
+                            label: "Accuracy (%)",
+
+                            data: [
+                                96.75,
+                                97.75,
+                                97.90,
+                                98.70,
+                                98.30,
+                                96.90
+                            ]
+                        }]
+
+                    },
+
+                    options: {
+
+                        responsive: true,
+
+                        scales: {
+
+                            y: {
+                                min: 90,
+                                max: 100
+                            }
+
+                        }
+
+                    }
+
+                }
+            );
+
+
+            /* ---------------- FEATURE IMPORTANCE ---------------- */
+
+            new Chart(
+                document.getElementById("featureChart"),
+                {
+                    type: "bar",
+
+                    data: {
+
+                        labels: [
+                            "Torque",
+                            "Rotational Speed",
+                            "Tool Wear",
+                            "Air Temperature",
+                            "Process Temperature",
+                            "Type M",
+                            "Type H",
+                            "Type L"
+                        ],
+
+                        datasets: [{
+
+                            label: "Importance (%)",
+
+                            data: [
+                                26.17,
+                                18.19,
+                                16.23,
+                                14.55,
+                                8.68,
+                                7.45,
+                                4.47,
+                                4.26
+                            ]
+
+                        }]
+
+                    },
+
+                    options: {
+
+                        indexAxis: "y",
+
+                        responsive: true,
+
+                        plugins: {
+
+                            legend: {
+                                display: false
+                            }
+
+                        },
+
+                        scales: {
+
+                            x: {
+                                beginAtZero: true
+                            }
+
+                        }
+
+                    }
+
+                }
+            );
+
+        </script>
+
+        {% endif %}
+
+
+        <!-- FOOTER -->
+
+        <footer>
+
+            <div>
+                <b>PredictAI</b> — Machine Learning Based Predictive Maintenance
+            </div>
+
+            <div>
+                AI4I 2020 Dataset • XGBoost
+            </div>
+
+        </footer>
+
+    </main>
+
+</body>
+</html>
