@@ -1,0 +1,148 @@
+"""
+Validation Service - Handles input validation
+"""
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+# Validation ranges based on AI4I 2020 dataset analysis
+VALIDATION_RULES = {
+    'air_temperature': {
+        'min': 290,
+        'max': 310,
+        'label': 'Air Temperature',
+        'unit': 'K'
+    },
+    'process_temperature': {
+        'min': 300,
+        'max': 320,
+        'label': 'Process Temperature',
+        'unit': 'K'
+    },
+    'rotational_speed': {
+        'min': 1000,
+        'max': 3000,
+        'label': 'Rotational Speed',
+        'unit': 'RPM'
+    },
+    'torque': {
+        'min': 0,
+        'max': 100,
+        'label': 'Torque',
+        'unit': 'Nm'
+    },
+    'tool_wear': {
+        'min': 0,
+        'max': 300,
+        'label': 'Tool Wear',
+        'unit': 'min'
+    }
+}
+
+VALID_MACHINE_TYPES = ['L', 'M', 'H']
+
+
+class ValidationService:
+    """Service for validating user inputs"""
+    
+    @staticmethod
+    def validate_numeric_field(field_name, value):
+        """
+        Validate a numeric input field
+        
+        Args:
+            field_name (str): Name of the field (e.g., 'air_temperature')
+            value: Value to validate
+            
+        Returns:
+            tuple: (is_valid: bool, error_message: str or None)
+        """
+        rules = VALIDATION_RULES.get(field_name)
+        
+        if not rules:
+            logger.warning(f"No validation rules found for field: {field_name}")
+            return True, None
+        
+        # Check if value is numeric
+        try:
+            num_value = float(value)
+        except (ValueError, TypeError):
+            error_msg = f"{rules['label']} must be a valid number"
+            return False, error_msg
+        
+        # Check range
+        if num_value < rules['min'] or num_value > rules['max']:
+            error_msg = (f"{rules['label']} must be between "
+                        f"{rules['min']} and {rules['max']} {rules['unit']}")
+            return False, error_msg
+        
+        return True, None
+    
+    @staticmethod
+    def validate_machine_type(machine_type):
+        """
+        Validate machine type
+        
+        Args:
+            machine_type (str): Machine type to validate
+            
+        Returns:
+            tuple: (is_valid: bool, error_message: str or None)
+        """
+        if not machine_type:
+            return False, "Machine type is required"
+        
+        machine_type = machine_type.upper()
+        
+        if machine_type not in VALID_MACHINE_TYPES:
+            error_msg = f"Machine type must be one of: {', '.join(VALID_MACHINE_TYPES)}"
+            return False, error_msg
+        
+        return True, None
+    
+    @staticmethod
+    def validate_all_inputs(machine_type, air_temperature, process_temperature,
+                           rotational_speed, torque, tool_wear):
+        """
+        Validate all prediction inputs
+        
+        Args:
+            machine_type (str): Type of machine
+            air_temperature: Air temperature value
+            process_temperature: Process temperature value
+            rotational_speed: Rotational speed value
+            torque: Torque value
+            tool_wear: Tool wear value
+            
+        Returns:
+            tuple: (is_valid: bool, error_messages: list)
+        """
+        errors = []
+        
+        # Validate machine type
+        is_valid, error_msg = ValidationService.validate_machine_type(machine_type)
+        if not is_valid:
+            errors.append(error_msg)
+        
+        # Validate numeric fields
+        numeric_fields = {
+            'air_temperature': air_temperature,
+            'process_temperature': process_temperature,
+            'rotational_speed': rotational_speed,
+            'torque': torque,
+            'tool_wear': tool_wear
+        }
+        
+        for field_name, value in numeric_fields.items():
+            is_valid, error_msg = ValidationService.validate_numeric_field(field_name, value)
+            if not is_valid:
+                errors.append(error_msg)
+        
+        is_all_valid = len(errors) == 0
+        return is_all_valid, errors
+    
+    @staticmethod
+    def get_validation_rules():
+        """Get validation rules for client-side validation"""
+        return VALIDATION_RULES

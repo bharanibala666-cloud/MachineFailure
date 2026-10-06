@@ -5,16 +5,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Predictive Maintenance AI</title>
+    <title>Predictive Maintenance System</title>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
 </head>
 
 <body>
 
-    <!-- SIDEBAR -->
+    <!-- HEADER NAV -->
     <aside class="sidebar">
 
         <div class="logo">
@@ -48,7 +52,7 @@
             <div class="status-dot"></div>
             <div>
                 <b>System Online</b>
-                <small>AI model ready</small>
+                <small>Model Ready</small>
             </div>
         </div>
 
@@ -60,17 +64,10 @@
 
         <!-- TOP BAR -->
         <header class="topbar">
-
             <div>
-                <p class="small-title">INDUSTRIAL AI MONITORING</p>
-                <h1>Machine Health Dashboard</h1>
+                <p class="small-title">PREDICTIVE MAINTENANCE</p>
+                <h1>Machine Health Monitoring</h1>
             </div>
-
-            <div class="model-badge">
-                <span></span>
-                XGBoost Model
-            </div>
-
         </header>
 
 
@@ -181,11 +178,9 @@
                                 </label>
 
                                 <select name="machine_type" required>
-
-                                    <option value="L">L — Low</option>
-                                    <option value="M" selected>M — Medium</option>
-                                    <option value="H">H — High</option>
-
+                                    <option value="L" {% if machine_type == 'L' %}selected{% endif %}>L — Low</option>
+                                    <option value="M" {% if machine_type == 'M' or not machine_type %}selected{% endif %}>M — Medium</option>
+                                    <option value="H" {% if machine_type == 'H' %}selected{% endif %}>H — High</option>
                                 </select>
 
                             </div>
@@ -198,13 +193,7 @@
                                     <span>[K]</span>
                                 </label>
 
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    name="air_temperature"
-                                    placeholder="e.g. 300"
-                                    required
-                                >
+                                <input type="number" step="0.01" name="air_temperature" placeholder="e.g. 300" value="{{ air_temperature if air_temperature else '' }}" required>
 
                             </div>
 
@@ -216,13 +205,7 @@
                                     <span>[K]</span>
                                 </label>
 
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    name="process_temperature"
-                                    placeholder="e.g. 310"
-                                    required
-                                >
+                                <input type="number" step="0.01" name="process_temperature" placeholder="e.g. 310" value="{{ process_temperature if process_temperature else '' }}" required>
 
                             </div>
 
@@ -234,12 +217,7 @@
                                     <span>[RPM]</span>
                                 </label>
 
-                                <input
-                                    type="number"
-                                    name="rotational_speed"
-                                    placeholder="e.g. 1500"
-                                    required
-                                >
+                                <input type="number" name="rotational_speed" placeholder="e.g. 1500" value="{{ rotational_speed if rotational_speed else '' }}" required>
 
                             </div>
 
@@ -251,13 +229,7 @@
                                     <span>[Nm]</span>
                                 </label>
 
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    name="torque"
-                                    placeholder="e.g. 40"
-                                    required
-                                >
+                                <input type="number" step="0.01" name="torque" placeholder="e.g. 40" value="{{ torque if torque else '' }}" required>
 
                             </div>
 
@@ -269,12 +241,7 @@
                                     <span>[min]</span>
                                 </label>
 
-                                <input
-                                    type="number"
-                                    name="tool_wear"
-                                    placeholder="e.g. 100"
-                                    required
-                                >
+                                <input type="number" name="tool_wear" placeholder="e.g. 100" value="{{ tool_wear if tool_wear else '' }}" required>
 
                             </div>
 
@@ -282,11 +249,8 @@
 
 
                         <button type="submit" class="predict-btn">
-
-                            <span>Run  Prediction</span>
-
+                            <span>Analyze Machine Health</span>
                             <span class="arrow">→</span>
-
                         </button>
 
                     </form>
@@ -307,6 +271,16 @@
                         <div class="ai-icon">✦</div>
 
                     </div>
+
+                    {% if error %}
+                    <div class="error-alert">
+                        <span class="error-icon">⚠</span>
+                        <div>
+                            <strong>Error</strong>
+                            <p>{{ error }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
 
 
                     {% if result %}
@@ -495,25 +469,25 @@
 
                 <div class="metric-card">
                     <span>Accuracy</span>
-                    <strong>98.70%</strong>
+                    <strong>{% if config.metrics %}{{ config.metrics.accuracy }}%{% else %}98.70%{% endif %}</strong>
                     <small>XGBoost</small>
                 </div>
 
                 <div class="metric-card">
                     <span>Precision</span>
-                    <strong>90.38%</strong>
+                    <strong>{% if config.metrics %}{{ config.metrics.precision }}%{% else %}90.38%{% endif %}</strong>
                     <small>XGBoost</small>
                 </div>
 
                 <div class="metric-card">
                     <span>Recall</span>
-                    <strong>69.12%</strong>
+                    <strong>{% if config.metrics %}{{ config.metrics.recall }}%{% else %}69.12%{% endif %}</strong>
                     <small>XGBoost</small>
                 </div>
 
                 <div class="metric-card">
                     <span>F1 Score</span>
-                    <strong>78.33%</strong>
+                    <strong>{% if config.metrics %}{{ config.metrics.f1_score }}%{% else %}78.33%{% endif %}</strong>
                     <small>XGBoost</small>
                 </div>
 
@@ -543,28 +517,54 @@
 
                         datasets: [{
                             label: "Current Value",
-
                             data: [
                                 {{ air_temperature }},
                                 {{ process_temperature }},
                                 {{ rotational_speed }},
                                 {{ torque }},
                                 {{ tool_wear }}
-                            ]
+                            ],
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            borderColor: 'rgba(102, 126, 234, 1)',
+                            borderWidth: 2,
+                            borderRadius: 6,
                         }]
 
                     },
 
                     options: {
-
                         responsive: true,
-
+                        maintainAspectRatio: true,
                         plugins: {
                             legend: {
                                 display: false
                             }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                },
+                                ticks: {
+                                    font: {
+                                        family: 'Inter',
+                                        size: 11
+                                    }
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                },
+                                ticks: {
+                                    font: {
+                                        family: 'Inter',
+                                        size: 11
+                                    }
+                                }
+                            }
                         }
-
                     }
 
                 }
@@ -591,7 +591,6 @@
 
                         datasets: [{
                             label: "Accuracy (%)",
-
                             data: [
                                 96.75,
                                 97.75,
@@ -599,24 +598,49 @@
                                 98.70,
                                 98.30,
                                 96.90
-                            ]
+                            ],
+                            backgroundColor: 'rgba(118, 75, 162, 0.1)',
+                            borderColor: 'rgba(118, 75, 162, 1)',
+                            borderWidth: 2,
+                            borderRadius: 6,
                         }]
 
                     },
 
                     options: {
-
                         responsive: true,
-
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
                         scales: {
-
                             y: {
                                 min: 90,
-                                max: 100
+                                max: 100,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                },
+                                ticks: {
+                                    font: {
+                                        family: 'Inter',
+                                        size: 11
+                                    }
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                },
+                                ticks: {
+                                    font: {
+                                        family: 'Inter',
+                                        size: 11
+                                    }
+                                }
                             }
-
                         }
-
                     }
 
                 }
@@ -656,7 +680,11 @@
                                 7.45,
                                 4.47,
                                 4.26
-                            ]
+                            ],
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            borderColor: 'rgba(102, 126, 234, 1)',
+                            borderWidth: 2,
+                            borderRadius: 6,
 
                         }]
 
@@ -667,6 +695,7 @@
                         indexAxis: "y",
 
                         responsive: true,
+                        maintainAspectRatio: true,
 
                         plugins: {
 
@@ -679,7 +708,28 @@
                         scales: {
 
                             x: {
-                                beginAtZero: true
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                },
+                                ticks: {
+                                    font: {
+                                        family: 'Inter',
+                                        size: 11
+                                    }
+                                }
+                            },
+
+                            y: {
+                                grid: {
+                                    display: false
+                                },
+                                ticks: {
+                                    font: {
+                                        family: 'Inter',
+                                        size: 11
+                                    }
+                                }
                             }
 
                         }
@@ -694,16 +744,14 @@
         {% endif %}
 
 
-        <!-- FOOTER -->
-
         <footer>
 
             <div>
-                <b>PredictAI</b> — Machine Learning Based Predictive Maintenance
+                <b>PredictAI</b> • Machine Learning-Based Predictive Maintenance
             </div>
 
             <div>
-                AI4I 2020 Dataset • XGBoost
+                Powered by XGBoost • AI4I 2020 Dataset
             </div>
 
         </footer>

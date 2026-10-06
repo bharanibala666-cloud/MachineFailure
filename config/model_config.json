@@ -1,0 +1,87 @@
+{
+  "model": {
+    "name": "XGBoost",
+    "version": "1.0",
+    "type": "predictive_maintenance_xgboost",
+    "description": "Machine Learning-Based Predictive Maintenance Model"
+  },
+  "metrics": {
+    "accuracy": 98.70,
+    "precision": 90.38,
+    "recall": 69.12,
+    "f1_score": 78.33
+  },
+  "comparison_models": [
+    {
+      "name": "Logistic Regression",
+      "accuracy": 96.75
+    },
+    {
+      "name": "Decision Tree",
+      "accuracy": 97.75
+    },
+    {
+      "name": "Random Forest",
+      "accuracy": 97.90
+    },
+    {
+      "name": "XGBoost",
+      "accuracy": 98.70
+    },
+    {
+      "name": "Voting Hybrid",
+      "accuracy": 98.30
+    },
+    {
+      "name": "Balanced XGB",
+      "accuracy": 96.90
+    }
+  ],
+  "feature_importance": [
+    {
+      "feature": "Torque",
+      "importance": 26.17
+    },
+    {
+      "feature": "Rotational Speed",
+      "importance": 18.19
+    },
+    {
+      "feature": "Tool Wear",
+      "importance": 16.23
+    },
+    {
+      "feature": "Air Temperature",
+      "importance": 14.55
+    },
+    {
+      "feature": "Process Temperature",
+      "importance": 8.68
+    },
+    {
+      "feature": "Type M",
+      "importance": 7.45
+    },
+    {
+      "feature": "Type H",
+      "importance": 4.47
+    },
+    {
+      "feature": "Type L",
+      "importance": 4.26
+    }
+  ],
+  "dataset": {
+    "name": "AI4I 2020 Predictive Maintenance Dataset",
+    "source": "UCI Machine Learning Repository",
+    "size": 10000,
+    "features": [
+      "Type",
+      "Air temperature [K]",
+      "Process temperature [K]",
+      "Rotational speed [rpm]",
+      "Torque [Nm]",
+      "Tool wear [min]"
+    ]
+  }
+}
