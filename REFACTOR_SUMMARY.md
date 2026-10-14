@@ -11,11 +11,11 @@ Comprehensive refactoring of the Flask-based Machine Learning Predictive Mainten
 **Client-Side:**
 - Created `static/js/main.js` with real-time validation
 - Validation ranges based on AI4I 2020 dataset:
-  - Air Temperature: 290-310 K
-  - Process Temperature: 300-320 K
-  - Rotational Speed: 1000-3000 RPM
-  - Torque: 0-100 Nm
-  - Tool Wear: 0-300 min
+  - Air Temperature: 295-305 K
+  - Process Temperature: 305-314 K
+  - Rotational Speed: 1150-2900 RPM
+  - Torque: 3.5-77 Nm
+  - Tool Wear: 0-255 min
 - Inline error messages with smooth slide-down animation
 - Visual feedback (red border, error icons)
 

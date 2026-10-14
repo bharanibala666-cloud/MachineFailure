@@ -38,109 +38,72 @@ except Exception as e:
     logger.error(f"Error loading configuration: {str(e)}")
 
 
+NUMERIC_FIELDS = [
+    "air_temperature",
+    "process_temperature",
+    "rotational_speed",
+    "torque",
+    "tool_wear",
+]
+
+
+@app.context_processor
+def inject_globals():
+    """Values every page render needs, including error pages (routes can override)"""
+    return {
+        "form_values": {},
+        "values": {},
+        "config": model_config,
+        "model_ready": prediction_service.is_model_loaded(),
+        "sensor_ranges": validation_service.get_validation_rules(),
+    }
+
+
 @app.route("/", methods=["GET", "POST"])
 def home():
     """Main route for prediction interface"""
     
-    # Default values
     result = None
     probability = None
     failure_modes = None
     error = None
     
-    air_temperature = None
-    process_temperature = None
-    rotational_speed = None
-    torque = None
-    tool_wear = None
-    machine_type = None
+    # Raw text the user typed, re-displayed in the form after any error
+    form_values = {}
+    # Parsed numbers, only set once all inputs are valid
+    values = {}
 
     if request.method == "POST":
+        form_values = {
+            field: request.form.get(field, "").strip()
+            for field in ["machine_type"] + NUMERIC_FIELDS
+        }
+        form_values["machine_type"] = form_values["machine_type"].upper()
+
         try:
-            # Check if model is loaded
             if not prediction_service.is_model_loaded():
                 error = "Prediction model is not available. Please contact support."
                 logger.error("Model not loaded - cannot make prediction")
-                return render_template("index.html", error=error, config=model_config)
+            else:
+                is_valid, validation_errors = validation_service.validate_all_inputs(**form_values)
 
-            # Get form data
-            machine_type = request.form.get("machine_type", "").upper()
-            
-            # Get numeric inputs with error handling
-            try:
-                air_temperature = float(request.form.get("air_temperature", 0))
-                process_temperature = float(request.form.get("process_temperature", 0))
-                rotational_speed = float(request.form.get("rotational_speed", 0))
-                torque = float(request.form.get("torque", 0))
-                tool_wear = float(request.form.get("tool_wear", 0))
-            except ValueError as e:
-                error = "All input fields must contain valid numbers"
-                logger.warning(f"Invalid numeric input: {str(e)}")
-                return render_template(
-                    "index.html",
-                    error=error,
-                    machine_type=machine_type,
-                    config=model_config
-                )
+                if not is_valid:
+                    error = " | ".join(validation_errors)
+                    logger.warning(f"Validation errors: {error}")
+                else:
+                    values = {field: float(form_values[field]) for field in NUMERIC_FIELDS}
+                    machine_type = form_values["machine_type"]
 
-            # Validate all inputs using validation service
-            is_valid, validation_errors = validation_service.validate_all_inputs(
-                machine_type=machine_type,
-                air_temperature=air_temperature,
-                process_temperature=process_temperature,
-                rotational_speed=rotational_speed,
-                torque=torque,
-                tool_wear=tool_wear
-            )
-            
-            if not is_valid:
-                error = " | ".join(validation_errors)
-                logger.warning(f"Validation errors: {error}")
-                return render_template(
-                    "index.html",
-                    error=error,
-                    air_temperature=air_temperature,
-                    process_temperature=process_temperature,
-                    rotational_speed=rotational_speed,
-                    torque=torque,
-                    tool_wear=tool_wear,
-                    machine_type=machine_type,
-                    config=model_config
-                )
+                    result, probability = prediction_service.predict(machine_type=machine_type, **values)
+                    logger.info(f"Prediction successful: {result} ({probability:.2f}%)")
 
-            # Make prediction using prediction service
-            try:
-                result, probability = prediction_service.predict(
-                    machine_type=machine_type,
-                    air_temperature=air_temperature,
-                    process_temperature=process_temperature,
-                    rotational_speed=rotational_speed,
-                    torque=torque,
-                    tool_wear=tool_wear
-                )
-                
-                logger.info(f"Prediction successful: {result} ({probability:.2f}%)")
-                
-                # Explain which physical failure mechanisms are at risk
-                failure_modes = explain_failure_modes(
-                    machine_type=machine_type,
-                    air_temperature=air_temperature,
-                    process_temperature=process_temperature,
-                    rotational_speed=rotational_speed,
-                    torque=torque,
-                    tool_wear=tool_wear
-                )
-                
-            except RuntimeError as e:
-                error = str(e)
-                logger.error(f"Runtime error during prediction: {str(e)}")
-            except Exception as e:
-                error = "An error occurred during prediction. Please try again."
-                logger.error(f"Prediction error: {str(e)}")
+                    # Explain which physical failure mechanisms are at risk
+                    failure_modes = explain_failure_modes(machine_type=machine_type, **values)
 
         except Exception as e:
-            error = "An unexpected error occurred. Please try again."
-            logger.error(f"Unexpected error in home route: {str(e)}")
+            result = None
+            error = "An error occurred during prediction. Please try again."
+            logger.error(f"Prediction error: {str(e)}")
 
     return render_template(
         "index.html",
@@ -148,27 +111,22 @@ def home():
         probability=probability,
         failure_modes=failure_modes,
         error=error,
-        air_temperature=air_temperature,
-        process_temperature=process_temperature,
-        rotational_speed=rotational_speed,
-        torque=torque,
-        tool_wear=tool_wear,
-        machine_type=machine_type,
-        config=model_config
+        form_values=form_values,
+        values=values if result else {},
     )
 
 
 @app.errorhandler(404)
 def not_found(error):
     """Handle 404 errors"""
-    return render_template("index.html", error="Page not found", config=model_config), 404
+    return render_template("index.html", error="Page not found"), 404
 
 
 @app.errorhandler(500)
 def internal_error(error):
     """Handle 500 errors"""
     logger.error(f"Internal server error: {str(error)}")
-    return render_template("index.html", error="Internal server error. Please try again.", config=model_config), 500
+    return render_template("index.html", error="Internal server error. Please try again."), 500
 
 
 if __name__ == "__main__":

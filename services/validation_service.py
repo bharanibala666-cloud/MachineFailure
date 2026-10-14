@@ -2,39 +2,44 @@
 Validation Service - Handles input validation
 """
 import logging
+import math
 
 logger = logging.getLogger(__name__)
 
 
-# Validation ranges based on AI4I 2020 dataset analysis
+# Validation ranges = the range covered by the AI4I 2020 training data,
+# rounded slightly outward. Outside these the model would be extrapolating
+# and its predictions are unreliable.
+#   Air temp 295.3-304.5 K | Process temp 305.7-313.8 K | Speed 1168-2886 rpm
+#   Torque 3.8-76.6 Nm     | Tool wear 0-253 min
 VALIDATION_RULES = {
     'air_temperature': {
-        'min': 290,
-        'max': 310,
+        'min': 295,
+        'max': 305,
         'label': 'Air Temperature',
         'unit': 'K'
     },
     'process_temperature': {
-        'min': 300,
-        'max': 320,
+        'min': 305,
+        'max': 314,
         'label': 'Process Temperature',
         'unit': 'K'
     },
     'rotational_speed': {
-        'min': 1000,
-        'max': 3000,
+        'min': 1150,
+        'max': 2900,
         'label': 'Rotational Speed',
         'unit': 'RPM'
     },
     'torque': {
-        'min': 0,
-        'max': 100,
+        'min': 3.5,
+        'max': 77,
         'label': 'Torque',
         'unit': 'Nm'
     },
     'tool_wear': {
         'min': 0,
-        'max': 300,
+        'max': 255,
         'label': 'Tool Wear',
         'unit': 'min'
     }
@@ -64,12 +69,18 @@ class ValidationService:
             logger.warning(f"No validation rules found for field: {field_name}")
             return True, None
         
-        # Check if value is numeric
+        # Check the field was filled in
+        if value is None or (isinstance(value, str) and value.strip() == ""):
+            return False, f"{rules['label']} is required"
+        
+        # Check if value is numeric (NaN/inf parse as floats but are not usable)
         try:
             num_value = float(value)
         except (ValueError, TypeError):
-            error_msg = f"{rules['label']} must be a valid number"
-            return False, error_msg
+            return False, f"{rules['label']} must be a valid number"
+        
+        if not math.isfinite(num_value):
+            return False, f"{rules['label']} must be a valid number"
         
         # Check range
         if num_value < rules['min'] or num_value > rules['max']:

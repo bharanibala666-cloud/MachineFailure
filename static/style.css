@@ -135,6 +135,10 @@ h1, h2, h3 {
     background: var(--mint);
 }
 
+.header-status-down .status-dot {
+    background: #ff6b6b;
+}
+
 
 /* ================= LAYOUT ================= */
 
@@ -355,6 +359,10 @@ section {
     font-size: 15px;
 }
 
+.error-alert p + p {
+    margin-top: 2px;
+}
+
 .verdict {
     display: flex;
     align-items: center;
@@ -533,6 +541,12 @@ section {
 
 .chart-title h3 {
     font-size: 22px;
+}
+
+.chart-empty {
+    font-size: 15px;
+    color: var(--muted);
+    padding: 48px 0;
 }
 
 .chart-title p {

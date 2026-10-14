@@ -37,7 +37,7 @@ python test_app.py
 ### Test the Validation
 1. Open http://localhost:5001
 2. Try entering invalid values:
-   - Air Temperature: 500 (should show error: must be 290-310)
+   - Air Temperature: 500 (should show error: must be 295-305)
    - Torque: -10 (should show error: must be 0-100)
 3. See real-time error messages appear
 

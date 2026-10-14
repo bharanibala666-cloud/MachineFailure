@@ -18,6 +18,8 @@
 
 <body>
 
+    {% set has_metrics = config.metrics and config.baseline_metrics %}
+
     <!-- HEADER -->
     <header class="site-header">
 
@@ -30,9 +32,9 @@
             <a href="#models">Models</a>
         </nav>
 
-        <div class="header-status">
+        <div class="header-status {% if not model_ready %}header-status-down{% endif %}">
             <span class="status-dot"></span>
-            <span>Model ready</span>
+            <span>{% if model_ready %}Model ready{% else %}Model unavailable{% endif %}</span>
         </div>
 
     </header>
@@ -51,29 +53,16 @@
         </section>
 
 
-        <!-- STAT CELLS -->
+        <!-- STAT CELLS (filled after a successful prediction) -->
         <section class="stats-grid">
-
+            {% for field, unit in [('air_temperature', 'K'), ('rotational_speed', 'RPM'), ('torque', 'Nm'), ('tool_wear', 'min')] %}
             <div class="cell stat">
-                <p class="label">Air Temperature</p>
-                <p class="stat-value">{% if air_temperature %}{{ air_temperature }}{% else %}—{% endif %}<small>K</small></p>
+                <p class="label">{{ sensor_ranges[field].label }}</p>
+                <p class="stat-value">
+                    <span class="stat-number">{% if values[field] is defined %}{{ '%g' | format(values[field]) }}{% else %}–{% endif %}</span><small>{{ unit }}</small>
+                </p>
             </div>
-
-            <div class="cell stat">
-                <p class="label">Rotational Speed</p>
-                <p class="stat-value">{% if rotational_speed %}{{ rotational_speed }}{% else %}—{% endif %}<small>RPM</small></p>
-            </div>
-
-            <div class="cell stat">
-                <p class="label">Torque</p>
-                <p class="stat-value">{% if torque %}{{ torque }}{% else %}—{% endif %}<small>Nm</small></p>
-            </div>
-
-            <div class="cell stat">
-                <p class="label">Tool Wear</p>
-                <p class="stat-value">{% if tool_wear %}{{ tool_wear }}{% else %}—{% endif %}<small>min</small></p>
-            </div>
-
+            {% endfor %}
         </section>
 
 
@@ -85,48 +74,37 @@
 
                 <p class="label">Machine Parameters</p>
 
-                <form method="POST">
+                <!-- novalidate: main.js shows inline messages instead of browser pop-ups;
+                     #prediction keeps the result in view after the page reloads -->
+                <form method="POST" action="#prediction" novalidate>
 
                     <div class="input-grid">
 
                         <div class="input-group">
                             <label for="machine_type">Machine Type</label>
                             <select id="machine_type" name="machine_type" required>
-                                <option value="L" {% if machine_type == 'L' %}selected{% endif %}>L — Low</option>
-                                <option value="M" {% if machine_type == 'M' or not machine_type %}selected{% endif %}>M — Medium</option>
-                                <option value="H" {% if machine_type == 'H' %}selected{% endif %}>H — High</option>
+                                {% set selected_type = form_values.get('machine_type') or 'M' %}
+                                <option value="L" {% if selected_type == 'L' %}selected{% endif %}>L — Low</option>
+                                <option value="M" {% if selected_type == 'M' %}selected{% endif %}>M — Medium</option>
+                                <option value="H" {% if selected_type == 'H' %}selected{% endif %}>H — High</option>
                             </select>
                         </div>
 
+                        {% for field, placeholder in [('air_temperature', '300'), ('process_temperature', '310'), ('rotational_speed', '1500'), ('torque', '40'), ('tool_wear', '100')] %}
+                        {% set rule = sensor_ranges[field] %}
                         <div class="input-group">
-                            <label for="air_temperature">Air Temperature <span>K</span></label>
-                            <input id="air_temperature" type="number" step="0.01" name="air_temperature" min="290" max="310" placeholder="300" value="{{ air_temperature if air_temperature else '' }}" required>
+                            <label for="{{ field }}">{{ rule.label }} <span>{{ rule.unit }}</span></label>
+                            <input id="{{ field }}" type="number" step="any" inputmode="decimal"
+                                   name="{{ field }}" min="{{ rule.min }}" max="{{ rule.max }}"
+                                   placeholder="{{ placeholder }}"
+                                   value="{{ form_values.get(field, '') }}" required>
                         </div>
-
-                        <div class="input-group">
-                            <label for="process_temperature">Process Temperature <span>K</span></label>
-                            <input id="process_temperature" type="number" step="0.01" name="process_temperature" min="300" max="320" placeholder="310" value="{{ process_temperature if process_temperature else '' }}" required>
-                        </div>
-
-                        <div class="input-group">
-                            <label for="rotational_speed">Rotational Speed <span>RPM</span></label>
-                            <input id="rotational_speed" type="number" name="rotational_speed" min="1000" max="3000" placeholder="1500" value="{{ rotational_speed if rotational_speed else '' }}" required>
-                        </div>
-
-                        <div class="input-group">
-                            <label for="torque">Torque <span>Nm</span></label>
-                            <input id="torque" type="number" step="0.01" name="torque" min="0" max="100" placeholder="40" value="{{ torque if torque else '' }}" required>
-                        </div>
-
-                        <div class="input-group">
-                            <label for="tool_wear">Tool Wear <span>min</span></label>
-                            <input id="tool_wear" type="number" name="tool_wear" min="0" max="300" placeholder="100" value="{{ tool_wear if tool_wear else '' }}" required>
-                        </div>
+                        {% endfor %}
 
                     </div>
 
                     <div class="form-actions">
-                        <button type="submit" class="predict-btn">
+                        <button type="submit" class="predict-btn" {% if not model_ready %}disabled{% endif %}>
                             <span>Analyze machine health</span>
                             <span aria-hidden="true">→</span>
                         </button>
@@ -145,7 +123,9 @@
                 {% if error %}
                 <div class="error-alert" role="alert">
                     <strong>Error</strong>
-                    <p>{{ error }}</p>
+                    {% for message in error.split(' | ') %}
+                    <p>{{ message }}</p>
+                    {% endfor %}
                 </div>
                 {% endif %}
 
@@ -171,7 +151,7 @@
                         <strong>{{ "%.2f"|format(probability) }}%</strong>
                     </div>
                     <div class="progress">
-                        <div class="progress-bar" style="width: {{ probability }}%;"></div>
+                        <div class="progress-bar" style="width: {{ '%.2f'|format(probability) }}%;"></div>
                     </div>
                 </div>
 
@@ -204,12 +184,18 @@
 
                 {% endif %}
 
+                <!-- Copied in by main.js when the Clear button resets the page -->
+                <template id="empty-result-template">
+                    <div class="empty-result">
+                        <h2>Ready for prediction</h2>
+                        <p>Enter machine parameters and run the model to analyze machine health.</p>
+                    </div>
+                </template>
+
             </div>
 
         </section>
 
-
-        {% if result %}
 
         <!-- ANALYTICS -->
         <section id="analytics">
@@ -223,10 +209,14 @@
 
                 <div class="cell chart-panel">
                     <div class="chart-title">
-                        <h3>Machine sensor values</h3>
-                        <p>Current input parameters</p>
+                        <h3>Sensor readings</h3>
+                        <p>Each reading as % of its allowed operating range</p>
                     </div>
+                    {% if result %}
                     <canvas id="sensorChart"></canvas>
+                    {% else %}
+                    <p class="chart-empty">Run a prediction to see the current readings.</p>
+                    {% endif %}
                 </div>
 
                 <div class="cell chart-panel">
@@ -258,38 +248,33 @@
                 <h2>Performance summary</h2>
             </div>
 
+            {% if has_metrics %}
             <div class="metrics-grid">
-
+                {% for key, name in [('accuracy', 'Accuracy'), ('precision', 'Precision'), ('recall', 'Recall'), ('f1_score', 'F1 Score')] %}
                 <div class="cell metric">
-                    <p class="label">Accuracy</p>
-                    <strong>{{ config.metrics.accuracy }}%</strong>
-                    <small>was {{ config.baseline_metrics.accuracy }}% with raw features</small>
+                    <p class="label">{{ name }}</p>
+                    <strong>{{ config.metrics[key] }}%</strong>
+                    <small>was {{ config.baseline_metrics[key] }}% with raw features</small>
                 </div>
-
-                <div class="cell metric">
-                    <p class="label">Precision</p>
-                    <strong>{{ config.metrics.precision }}%</strong>
-                    <small>was {{ config.baseline_metrics.precision }}% with raw features</small>
-                </div>
-
-                <div class="cell metric">
-                    <p class="label">Recall</p>
-                    <strong>{{ config.metrics.recall }}%</strong>
-                    <small>was {{ config.baseline_metrics.recall }}% with raw features</small>
-                </div>
-
-                <div class="cell metric">
-                    <p class="label">F1 Score</p>
-                    <strong>{{ config.metrics.f1_score }}%</strong>
-                    <small>was {{ config.baseline_metrics.f1_score }}% with raw features</small>
-                </div>
-
+                {% endfor %}
             </div>
+            {% else %}
+            <p class="cell chart-empty">Model metrics are not available. Run <code>python train_model.py</code>.</p>
+            {% endif %}
 
         </section>
 
+    </main>
 
-        <script>
+
+    <footer>
+        <span>PredictAI — Machine learning-based predictive maintenance</span>
+        <span>Physics-informed XGBoost · AI4I 2020 dataset</span>
+    </footer>
+
+
+    <script>
+        if (window.Chart) {
             const INK = "#232323";
             const GREY = "#D9D9D9";
             const MINT = "#A1FFCB";
@@ -303,42 +288,57 @@
             const gridLines = { color: "#E0E0E0" };
             const noGrid = { display: false };
 
+            {% if result %}
             /* ---------------- SENSOR CHART ---------------- */
-            new Chart(document.getElementById("sensorChart"), {
+            const sensorRanges = {{ sensor_ranges | tojson }};
+            const sensorValues = {{ values | tojson }};
+            const sensorFields = ["air_temperature", "process_temperature", "rotational_speed", "torque", "tool_wear"];
+
+            // Kept on window so the Clear button can remove it
+            window.sensorChart = new Chart(document.getElementById("sensorChart"), {
                 type: "bar",
                 data: {
-                    labels: ["Air Temp", "Process Temp", "Speed", "Torque", "Tool Wear"],
+                    labels: sensorFields.map(f => sensorRanges[f].label),
                     datasets: [{
-                        label: "Current Value",
-                        data: [
-                            {{ air_temperature }},
-                            {{ process_temperature }},
-                            {{ rotational_speed }},
-                            {{ torque }},
-                            {{ tool_wear }}
-                        ],
+                        label: "% of operating range",
+                        data: sensorFields.map(f => {
+                            const r = sensorRanges[f];
+                            return Math.round((sensorValues[f] - r.min) / (r.max - r.min) * 1000) / 10;
+                        }),
                         backgroundColor: INK,
                         borderWidth: 0,
                     }]
                 },
                 options: {
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => {
+                                    const f = sensorFields[ctx.dataIndex];
+                                    return `${sensorValues[f]} ${sensorRanges[f].unit} (${ctx.parsed.y}% of range)`;
+                                }
+                            }
+                        }
+                    },
                     scales: {
-                        y: { beginAtZero: true, grid: gridLines, border: { display: false } },
+                        y: { min: 0, max: 100, grid: gridLines, border: { display: false },
+                             ticks: { callback: v => v + "%" } },
                         x: { grid: noGrid, border: { color: INK } }
                     }
                 }
             });
+            {% endif %}
 
             /* ---------------- MODEL CHART ---------------- */
-            const modelNames = {{ config.comparison_models | map(attribute='name') | list | tojson }};
+            const models = {{ config.get('comparison_models', []) | tojson }};
             new Chart(document.getElementById("modelChart"), {
                 type: "bar",
                 data: {
-                    labels: modelNames,
+                    labels: models.map(m => m.name),
                     datasets: [{
                         label: "F1 Score (%)",
-                        data: {{ config.comparison_models | map(attribute='f1_score') | list | tojson }},
-                        backgroundColor: modelNames.map(n => n === "Physics XGBoost" ? INK : GREY),
+                        data: models.map(m => m.f1_score),
+                        backgroundColor: models.map(m => m.name === "Physics XGBoost" ? INK : GREY),
                         borderWidth: 0,
                     }]
                 },
@@ -351,18 +351,19 @@
             });
 
             /* ---------------- FEATURE IMPORTANCE ---------------- */
-            const featureNames = {{ config.feature_importance | map(attribute='feature') | list | tojson }};
+            const features = {{ config.get('feature_importance', []) | tojson }};
             const physicsFeatures = ["Power (W)", "Strain (min*Nm)", "Temp diff (K)"];
+            const isPhysics = f => physicsFeatures.includes(f.feature);
             new Chart(document.getElementById("featureChart"), {
                 type: "bar",
                 data: {
-                    labels: featureNames,
+                    labels: features.map(f => f.feature),
                     datasets: [{
                         label: "Importance (%)",
-                        data: {{ config.feature_importance | map(attribute='importance') | list | tojson }},
-                        backgroundColor: featureNames.map(n => physicsFeatures.includes(n) ? MINT : GREY),
+                        data: features.map(f => f.importance),
+                        backgroundColor: features.map(f => isPhysics(f) ? MINT : GREY),
                         borderColor: INK,
-                        borderWidth: featureNames.map(n => physicsFeatures.includes(n) ? 1 : 0),
+                        borderWidth: features.map(f => isPhysics(f) ? 1 : 0),
                     }]
                 },
                 options: {
@@ -373,17 +374,8 @@
                     }
                 }
             });
-        </script>
-
-        {% endif %}
-
-    </main>
-
-
-    <footer>
-        <span>PredictAI — Machine learning-based predictive maintenance</span>
-        <span>Physics-informed XGBoost · AI4I 2020 dataset</span>
-    </footer>
+        }
+    </script>
 
 </body>
 </html>

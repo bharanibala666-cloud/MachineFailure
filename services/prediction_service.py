@@ -50,13 +50,12 @@ class PredictionService:
             logger.info(f"Decision threshold: {self._threshold}")
             
         except FileNotFoundError:
+            # Keep the app running so it can show "model unavailable" to the user
             logger.error(f"Model file not found at {model_path}")
             self._model_loaded = False
-            raise
         except Exception as e:
             logger.error(f"Error loading model: {str(e)}")
             self._model_loaded = False
-            raise
     
     def is_model_loaded(self):
         """Check if model is loaded and ready"""

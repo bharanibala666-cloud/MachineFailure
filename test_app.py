@@ -153,6 +153,53 @@ def test_services():
         return False
     print()
 
+    # Test 6: Web routes and form handling
+    print("Test 6: Web Routes")
+    try:
+        from app import app
+
+        client = app.test_client()
+        valid = dict(machine_type='M', air_temperature='300', process_temperature='310',
+                     rotational_speed='1500', torque='40', tool_wear='0')
+
+        page = client.get("/").get_data(as_text=True)
+        for section in ['id="dashboard"', 'id="prediction"', 'id="analytics"', 'id="models"']:
+            assert section in page, f"Every nav target must exist before a prediction: {section}"
+        print("✓ All nav sections render on first load")
+
+        response = client.post("/", data=valid)
+        page = response.get_data(as_text=True)
+        assert response.status_code == 200
+        assert "Failure probability" in page, "Valid input should produce a result"
+        assert 'name="tool_wear" min="0" max="255"' in page and 'value="0"' in page, \
+            "A tool wear of 0 must stay in the form"
+        print("✓ Valid prediction renders; zero values are kept")
+
+        page = client.post("/", data={**valid, 'torque': 'nan'}).get_data(as_text=True)
+        assert "Torque must be a valid number" in page, "NaN must be rejected"
+        assert "Failure probability" not in page
+
+        page = client.post("/", data={**valid, 'torque': ''}).get_data(as_text=True)
+        assert "Torque is required" in page, "Empty field must be reported as required"
+        assert 'value="300"' in page, "Other typed values must be kept after an error"
+
+        page = client.post("/", data={**valid, 'torque': '0.07'}).get_data(as_text=True)
+        assert "Torque must be between 3.5 and 77 Nm" in page, \
+            "Inputs outside the training data range must be rejected"
+        assert "Failure probability" not in page
+
+        page = client.post("/", data={}).get_data(as_text=True)
+        assert "Tool Wear is required" in page, "Missing fields must not default to 0"
+        print("✓ Empty, missing and NaN inputs are rejected with clear messages")
+
+        response = client.get("/missing-page")
+        assert response.status_code == 404 and "Page not found" in response.get_data(as_text=True)
+        print("✓ 404 page renders")
+    except Exception as e:
+        print(f"✗ Failed: {str(e)}")
+        return False
+    print()
+
     print("=" * 60)
     print("All Tests Passed! ✓")
     print("=" * 60)

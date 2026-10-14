@@ -1,37 +1,13 @@
 // ==================== INPUT VALIDATION ====================
 
-// Validation ranges based on dataset analysis
+// Labels and units for messages. The min/max limits come from each input's
+// min/max attributes, which the server fills in from validation_service.py
 const VALIDATION_RULES = {
-    air_temperature: {
-        min: 290,
-        max: 310,
-        unit: 'K',
-        label: 'Air Temperature'
-    },
-    process_temperature: {
-        min: 300,
-        max: 320,
-        unit: 'K',
-        label: 'Process Temperature'
-    },
-    rotational_speed: {
-        min: 1000,
-        max: 3000,
-        unit: 'RPM',
-        label: 'Rotational Speed'
-    },
-    torque: {
-        min: 0,
-        max: 100,
-        unit: 'Nm',
-        label: 'Torque'
-    },
-    tool_wear: {
-        min: 0,
-        max: 300,
-        unit: 'min',
-        label: 'Tool Wear'
-    }
+    air_temperature: { unit: 'K', label: 'Air Temperature' },
+    process_temperature: { unit: 'K', label: 'Process Temperature' },
+    rotational_speed: { unit: 'RPM', label: 'Rotational Speed' },
+    torque: { unit: 'Nm', label: 'Torque' },
+    tool_wear: { unit: 'min', label: 'Tool Wear' }
 };
 
 // Initialize validation on page load
@@ -88,6 +64,12 @@ function validateField(input) {
     // Clear previous error
     clearFieldError(input);
 
+    // Number inputs report text like "abc" as an empty value, so check badInput first
+    if (input.validity && input.validity.badInput) {
+        showFieldError(input, `${rules.label} must be a valid number.`);
+        return false;
+    }
+
     // Check if value is empty
     if (input.value.trim() === '') {
         showFieldError(input, `${rules.label} is required.`);
@@ -100,9 +82,11 @@ function validateField(input) {
         return false;
     }
 
-    // Check range
-    if (value < rules.min || value > rules.max) {
-        showFieldError(input, `${rules.label} must be between ${rules.min} and ${rules.max} ${rules.unit}.`);
+    // Check range (the range the model was trained on)
+    const min = parseFloat(input.min);
+    const max = parseFloat(input.max);
+    if (value < min || value > max) {
+        showFieldError(input, `${rules.label} must be between ${min} and ${max} ${rules.unit}.`);
         return false;
     }
 
@@ -190,6 +174,18 @@ function showLoadingState() {
 }
 
 
+// Re-enable the button if the page is restored from the back/forward cache
+window.addEventListener('pageshow', function(e) {
+    if (!e.persisted) return;
+
+    const submitButton = document.querySelector('.predict-btn');
+    if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.querySelector('span:first-child').textContent = 'Analyze machine health';
+    }
+});
+
+
 // ==================== FORM CONTROLS ====================
 
 function initializeFormControls() {
@@ -216,7 +212,11 @@ function addResetButton() {
 
     // Add reset functionality
     resetButton.addEventListener('click', function() {
-        form.reset();
+        // form.reset() would restore the server-rendered values, so empty fields directly
+        form.querySelectorAll('input').forEach(input => {
+            input.value = '';
+        });
+        form.querySelector('select[name="machine_type"]').value = 'M';
         
         // Clear all validation states
         form.querySelectorAll('.input-error, .input-valid').forEach(input => {
@@ -233,7 +233,41 @@ function addResetButton() {
         if (formError) {
             formError.remove();
         }
+
+        clearPrediction();
     });
+}
+
+// Return the result panel, stat cells and sensor chart to the "no prediction" state
+function clearPrediction() {
+    const panel = document.querySelector('.result-panel');
+    if (panel) {
+        panel.querySelectorAll('.error-alert, .verdict, .probability, .failure-modes')
+            .forEach(el => el.remove());
+
+        const template = document.getElementById('empty-result-template');
+        if (template && !panel.querySelector('.empty-result')) {
+            panel.insertBefore(template.content.cloneNode(true), template);
+        }
+    }
+
+    document.querySelectorAll('.stat-number').forEach(el => {
+        el.textContent = '–';
+    });
+
+    if (window.sensorChart) {
+        const canvas = window.sensorChart.canvas;
+        window.sensorChart.destroy();
+        window.sensorChart = null;
+
+        const placeholder = document.createElement('p');
+        placeholder.className = 'chart-empty';
+        placeholder.textContent = 'Run a prediction to see the current readings.';
+        canvas.replaceWith(placeholder);
+    }
+
+    // Turn the POST result page into a plain GET entry so a refresh doesn't resubmit
+    history.replaceState(null, '', window.location.pathname + window.location.hash);
 }
 
 
@@ -261,5 +295,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     window.addEventListener('scroll', updateActiveLink, { passive: true });
+    // The browser may jump to #prediction after this script runs, without a scroll event
+    window.addEventListener('load', updateActiveLink);
+    window.addEventListener('hashchange', updateActiveLink);
     updateActiveLink();
 });
