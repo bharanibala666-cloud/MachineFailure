@@ -5,6 +5,7 @@ import os
 
 from services.prediction_service import PredictionService
 from services.validation_service import ValidationService
+from services.feature_engineering import explain_failure_modes
 
 # Configure logging
 logging.basicConfig(
@@ -44,6 +45,7 @@ def home():
     # Default values
     result = None
     probability = None
+    failure_modes = None
     error = None
     
     air_temperature = None
@@ -119,6 +121,16 @@ def home():
                 
                 logger.info(f"Prediction successful: {result} ({probability:.2f}%)")
                 
+                # Explain which physical failure mechanisms are at risk
+                failure_modes = explain_failure_modes(
+                    machine_type=machine_type,
+                    air_temperature=air_temperature,
+                    process_temperature=process_temperature,
+                    rotational_speed=rotational_speed,
+                    torque=torque,
+                    tool_wear=tool_wear
+                )
+                
             except RuntimeError as e:
                 error = str(e)
                 logger.error(f"Runtime error during prediction: {str(e)}")
@@ -134,6 +146,7 @@ def home():
         "index.html",
         result=result,
         probability=probability,
+        failure_modes=failure_modes,
         error=error,
         air_temperature=air_temperature,
         process_temperature=process_temperature,

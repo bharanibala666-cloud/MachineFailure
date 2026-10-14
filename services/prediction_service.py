@@ -1,10 +1,12 @@
 """
 Prediction Service - Handles model loading and predictions
 """
-import pandas as pd
 import joblib
+import json
 import os
 import logging
+
+from services.feature_engineering import to_input_frame
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +17,7 @@ class PredictionService:
     _instance = None
     _model = None
     _model_loaded = False
+    _threshold = 0.5
     
     def __new__(cls):
         """Singleton pattern to ensure model is loaded only once"""
@@ -31,11 +34,20 @@ class PredictionService:
         """Load the trained model from disk"""
         try:
             base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            model_path = os.path.join(base_dir, "models", "predictive_maintenance_xgboost.pkl")
+            model_path = os.path.join(base_dir, "models", "predictive_maintenance_xgboost_physics.pkl")
             
             self._model = joblib.load(model_path)
             self._model_loaded = True
             logger.info(f"Model loaded successfully from {model_path}")
+            
+            # Decision threshold tuned by cross-validation in train_model.py
+            config_path = os.path.join(base_dir, "config", "model_config.json")
+            try:
+                with open(config_path) as f:
+                    self._threshold = json.load(f)["model"]["threshold"]
+            except (FileNotFoundError, KeyError):
+                logger.warning("No threshold in config, using 0.5")
+            logger.info(f"Decision threshold: {self._threshold}")
             
         except FileNotFoundError:
             logger.error(f"Model file not found at {model_path}")
@@ -74,22 +86,15 @@ class PredictionService:
             raise RuntimeError("Prediction model is not loaded")
         
         try:
-            # Create input dataframe
-            input_data = pd.DataFrame({
-                "Type": [machine_type],
-                "Air temperature [K]": [air_temperature],
-                "Process temperature [K]": [process_temperature],
-                "Rotational speed [rpm]": [rotational_speed],
-                "Torque [Nm]": [torque],
-                "Tool wear [min]": [tool_wear]
-            })
+            # Raw inputs; the pipeline computes the physics features itself
+            input_data = to_input_frame(machine_type, air_temperature, process_temperature,
+                                        rotational_speed, torque, tool_wear)
             
-            # Make prediction
-            prediction = self._model.predict(input_data)[0]
-            probability = self._model.predict_proba(input_data)[0][1] * 100
+            failure_proba = self._model.predict_proba(input_data)[0][1]
+            probability = failure_proba * 100
             
             # Convert prediction to human-readable result
-            if prediction == 1:
+            if failure_proba >= self._threshold:
                 result = "Machine Failure"
             else:
                 result = "No Machine Failure"

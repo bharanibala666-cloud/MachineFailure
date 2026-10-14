@@ -1694,3 +1694,69 @@ nav a.active {
     color: #667eea;
     transform: translateY(-2px);
 }
+
+
+/* ================= PHYSICS FAILURE-MODE CHECK ================= */
+
+.failure-modes {
+    margin-top: 20px;
+    text-align: left;
+    background: #fafafa;
+    padding: 16px 20px;
+    border-radius: 12px;
+}
+
+.failure-modes-header {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.mode-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0 10px 12px;
+    border-left: 3px solid #d4d4d4;
+    margin-bottom: 8px;
+}
+
+.mode-row:last-child {
+    margin-bottom: 0;
+}
+
+.mode-main strong {
+    font-size: 14px;
+    color: #1a1a1a;
+}
+
+.mode-main strong small {
+    font-weight: 500;
+    color: #999;
+    font-size: 11px;
+    margin-left: 4px;
+}
+
+.mode-main p {
+    font-size: 12px;
+    color: #666;
+    line-height: 1.4;
+}
+
+.mode-chip {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+}
+
+.mode-ok { border-left-color: #10b981; }
+.mode-ok .mode-chip { background: #d1fae5; color: #065f46; }
+
+.mode-warning { border-left-color: #f59e0b; }
+.mode-warning .mode-chip { background: #fef3c7; color: #92400e; }
+
+.mode-risk { border-left-color: #ef4444; }
+.mode-risk .mode-chip { background: #fee2e2; color: #991b1b; }

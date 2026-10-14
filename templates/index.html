@@ -337,6 +337,28 @@
 
                         </div>
 
+                        {% if failure_modes %}
+                        <div class="failure-modes">
+
+                            <div class="failure-modes-header">
+                                <span>Why? — Physics Failure-Mode Check</span>
+                            </div>
+
+                            {% for mode in failure_modes %}
+                            <div class="mode-row mode-{{ mode.status }}">
+                                <div class="mode-main">
+                                    <strong>{{ mode.name }} <small>{{ mode.code }}</small></strong>
+                                    <p>{{ mode.message }}</p>
+                                </div>
+                                <span class="mode-chip">
+                                    {% if mode.status == 'risk' %}At risk{% elif mode.status == 'warning' %}Near limit{% else %}OK{% endif %}
+                                </span>
+                            </div>
+                            {% endfor %}
+
+                        </div>
+                        {% endif %}
+
                     </div>
 
                     {% else %}
@@ -412,8 +434,8 @@
                     <div class="chart-title">
 
                         <div>
-                            <h3>Model Accuracy</h3>
-                            <p>Performance comparison</p>
+                            <h3>Model F1 Score</h3>
+                            <p>F1 balances missed failures and false alarms</p>
                         </div>
 
                         <span>📈</span>
@@ -433,10 +455,10 @@
                 <div class="chart-title">
 
                     <div>
-                        <h3>Feature Importance — XGBoost</h3>
+                        <h3>Feature Importance — Physics-Informed XGBoost</h3>
 
                         <p>
-                            Relative contribution of input features
+                            Power, Temp diff and Strain are computed from the raw sensors
                         </p>
                     </div>
 
@@ -469,26 +491,26 @@
 
                 <div class="metric-card">
                     <span>Accuracy</span>
-                    <strong>{% if config.metrics %}{{ config.metrics.accuracy }}%{% else %}98.70%{% endif %}</strong>
-                    <small>XGBoost</small>
+                    <strong>{{ config.metrics.accuracy }}%</strong>
+                    <small>was {{ config.baseline_metrics.accuracy }}% with raw features</small>
                 </div>
 
                 <div class="metric-card">
                     <span>Precision</span>
-                    <strong>{% if config.metrics %}{{ config.metrics.precision }}%{% else %}90.38%{% endif %}</strong>
-                    <small>XGBoost</small>
+                    <strong>{{ config.metrics.precision }}%</strong>
+                    <small>was {{ config.baseline_metrics.precision }}% with raw features</small>
                 </div>
 
                 <div class="metric-card">
                     <span>Recall</span>
-                    <strong>{% if config.metrics %}{{ config.metrics.recall }}%{% else %}69.12%{% endif %}</strong>
-                    <small>XGBoost</small>
+                    <strong>{{ config.metrics.recall }}%</strong>
+                    <small>was {{ config.baseline_metrics.recall }}% with raw features</small>
                 </div>
 
                 <div class="metric-card">
                     <span>F1 Score</span>
-                    <strong>{% if config.metrics %}{{ config.metrics.f1_score }}%{% else %}78.33%{% endif %}</strong>
-                    <small>XGBoost</small>
+                    <strong>{{ config.metrics.f1_score }}%</strong>
+                    <small>was {{ config.baseline_metrics.f1_score }}% with raw features</small>
                 </div>
 
             </div>
@@ -580,25 +602,11 @@
 
                     data: {
 
-                        labels: [
-                            "Logistic",
-                            "Decision Tree",
-                            "Random Forest",
-                            "XGBoost",
-                            "Voting Hybrid",
-                            "Balanced XGB"
-                        ],
+                        labels: {{ config.comparison_models | map(attribute='name') | list | tojson }},
 
                         datasets: [{
-                            label: "Accuracy (%)",
-                            data: [
-                                96.75,
-                                97.75,
-                                97.90,
-                                98.70,
-                                98.30,
-                                96.90
-                            ],
+                            label: "F1 Score (%)",
+                            data: {{ config.comparison_models | map(attribute='f1_score') | list | tojson }},
                             backgroundColor: 'rgba(118, 75, 162, 0.1)',
                             borderColor: 'rgba(118, 75, 162, 1)',
                             borderWidth: 2,
@@ -617,7 +625,7 @@
                         },
                         scales: {
                             y: {
-                                min: 90,
+                                min: 0,
                                 max: 100,
                                 grid: {
                                     color: 'rgba(0, 0, 0, 0.05)'
@@ -656,31 +664,13 @@
 
                     data: {
 
-                        labels: [
-                            "Torque",
-                            "Rotational Speed",
-                            "Tool Wear",
-                            "Air Temperature",
-                            "Process Temperature",
-                            "Type M",
-                            "Type H",
-                            "Type L"
-                        ],
+                        labels: {{ config.feature_importance | map(attribute='feature') | list | tojson }},
 
                         datasets: [{
 
                             label: "Importance (%)",
 
-                            data: [
-                                26.17,
-                                18.19,
-                                16.23,
-                                14.55,
-                                8.68,
-                                7.45,
-                                4.47,
-                                4.26
-                            ],
+                            data: {{ config.feature_importance | map(attribute='importance') | list | tojson }},
                             backgroundColor: 'rgba(102, 126, 234, 0.1)',
                             borderColor: 'rgba(102, 126, 234, 1)',
                             borderWidth: 2,
@@ -751,7 +741,7 @@
             </div>
 
             <div>
-                Powered by XGBoost • AI4I 2020 Dataset
+                Powered by Physics-Informed XGBoost • AI4I 2020 Dataset
             </div>
 
         </footer>

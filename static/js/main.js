@@ -47,7 +47,7 @@ function initializeValidation() {
 
     // Add real-time validation to each input
     Object.keys(VALIDATION_RULES).forEach(fieldName => {
-        const input = form.querySelector(\`[name="\${fieldName}"]\`);
+        const input = form.querySelector(`[name="${fieldName}"]`);
         
         if (input) {
             // Validate on blur
@@ -90,19 +90,19 @@ function validateField(input) {
 
     // Check if value is empty
     if (input.value.trim() === '') {
-        showFieldError(input, \`\${rules.label} is required.\`);
+        showFieldError(input, `${rules.label} is required.`);
         return false;
     }
 
     // Check if value is a valid number
     if (isNaN(value)) {
-        showFieldError(input, \`\${rules.label} must be a valid number.\`);
+        showFieldError(input, `${rules.label} must be a valid number.`);
         return false;
     }
 
     // Check range
     if (value < rules.min || value > rules.max) {
-        showFieldError(input, \`\${rules.label} must be between \${rules.min} and \${rules.max} \${rules.unit}.\`);
+        showFieldError(input, `${rules.label} must be between ${rules.min} and ${rules.max} ${rules.unit}.`);
         return false;
     }
 
@@ -117,7 +117,7 @@ function validateForm() {
 
     // Validate all fields
     Object.keys(VALIDATION_RULES).forEach(fieldName => {
-        const input = form.querySelector(\`[name="\${fieldName}"]\`);
+        const input = form.querySelector(`[name="${fieldName}"]`);
         if (input && !validateField(input)) {
             isValid = false;
         }
@@ -195,12 +195,12 @@ function showLoadingState() {
     // Create loading overlay
     const overlay = document.createElement('div');
     overlay.className = 'loading-overlay';
-    overlay.innerHTML = \`
+    overlay.innerHTML = `
         <div class="loading-spinner">
             <div class="spinner"></div>
             <p>Analyzing Machine Health...</p>
         </div>
-    \`;
+    `;
     
     document.body.appendChild(overlay);
 
@@ -227,10 +227,10 @@ function addResetButton() {
     const resetButton = document.createElement('button');
     resetButton.type = 'button';
     resetButton.className = 'reset-btn';
-    resetButton.innerHTML = \`
+    resetButton.innerHTML = `
         <span>Clear Form</span>
         <span class="reset-icon">↻</span>
-    \`;
+    `;
 
     // Insert after submit button
     submitButton.parentElement.appendChild(resetButton);

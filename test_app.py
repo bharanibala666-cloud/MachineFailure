@@ -100,6 +100,59 @@ def test_services():
         return False
     print()
     
+    # Test 5: Physics feature engineering
+    print("Test 5: Physics Feature Engineering")
+    try:
+        import pandas as pd
+        from services.feature_engineering import (
+            add_physics_features, explain_failure_modes, POWER, TEMP_DIFF, STRAIN
+        )
+
+        row = pd.DataFrame({
+            "Torque [Nm]": [40.0],
+            "Rotational speed [rpm]": [1500],
+            "Air temperature [K]": [300.0],
+            "Process temperature [K]": [310.0],
+            "Tool wear [min]": [100],
+        })
+        features = add_physics_features(row).iloc[0]
+        assert abs(features[POWER] - 6283.19) < 0.1, "Power = T x rpm x 2pi/60"
+        assert abs(features[TEMP_DIFF] - 10.0) < 1e-9, "Temp diff = process - air"
+        assert features[STRAIN] == 4000, "Strain = wear x torque"
+        print("✓ Power, Temp diff and Strain computed correctly")
+
+        def statuses(**kwargs):
+            return {m["code"]: m["status"] for m in explain_failure_modes(**kwargs)}
+
+        normal = statuses(machine_type='M', air_temperature=300.0, process_temperature=310.0,
+                          rotational_speed=1500, torque=40.0, tool_wear=100)
+        assert set(normal.values()) == {"ok"}, f"Normal machine should be all OK: {normal}"
+
+        overpowered = statuses(machine_type='M', air_temperature=300.0, process_temperature=310.0,
+                               rotational_speed=1500, torque=65.0, tool_wear=100)
+        assert overpowered["PWF"] == "risk", "Power above 9000 W should be a risk"
+
+        overheated = statuses(machine_type='M', air_temperature=302.0, process_temperature=310.0,
+                              rotational_speed=1300, torque=40.0, tool_wear=100)
+        assert overheated["HDF"] == "risk", "Small temp gap at low rpm should be a risk"
+
+        overstrained = statuses(machine_type='L', air_temperature=300.0, process_temperature=310.0,
+                                rotational_speed=1500, torque=55.0, tool_wear=210)
+        assert overstrained["OSF"] == "risk", "Strain above type-L limit should be a risk"
+        assert overstrained["TWF"] == "risk", "Tool wear above 200 min should be a risk"
+        print("✓ Failure-mode explanations flag the right risks")
+
+        result, probability = prediction_service.predict(
+            machine_type='L', air_temperature=300.0, process_temperature=310.0,
+            rotational_speed=1500, torque=55.0, tool_wear=210
+        )
+        assert result == "Machine Failure", "Overstrained machine should be predicted to fail"
+        print(f"✓ Overstrained machine predicted as failure ({probability:.2f}%)")
+    except Exception as e:
+        print(f"✗ Failed: {str(e)}")
+        return False
+    print()
+
     print("=" * 60)
     print("All Tests Passed! ✓")
     print("=" * 60)
