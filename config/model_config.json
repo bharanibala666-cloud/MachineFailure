@@ -1,0 +1,111 @@
+{
+  "model": {
+    "name": "Physics-Informed XGBoost",
+    "version": "2.0",
+    "type": "predictive_maintenance_xgboost_physics",
+    "file": "predictive_maintenance_xgboost_physics.pkl",
+    "description": "XGBoost on physics features: Power, Temperature Difference, Strain",
+    "threshold": 0.35
+  },
+  "metrics": {
+    "accuracy": 99.25,
+    "precision": 93.44,
+    "recall": 83.82,
+    "f1_score": 88.37
+  },
+  "comparison_models": [
+    {
+      "name": "Logistic Regression",
+      "accuracy": 96.75,
+      "f1_score": 17.72
+    },
+    {
+      "name": "Decision Tree",
+      "accuracy": 97.75,
+      "f1_score": 64.57
+    },
+    {
+      "name": "Random Forest",
+      "accuracy": 97.9,
+      "f1_score": 58.0
+    },
+    {
+      "name": "Voting Hybrid",
+      "accuracy": 98.3,
+      "f1_score": 70.69
+    },
+    {
+      "name": "Balanced XGB",
+      "accuracy": 96.9,
+      "f1_score": 63.95
+    },
+    {
+      "name": "XGBoost",
+      "accuracy": 98.65,
+      "f1_score": 77.69
+    },
+    {
+      "name": "Physics XGBoost",
+      "accuracy": 99.25,
+      "f1_score": 88.37
+    }
+  ],
+  "feature_importance": [
+    {
+      "feature": "Rotational Speed",
+      "importance": 24.91
+    },
+    {
+      "feature": "Power (W)",
+      "importance": 20.5
+    },
+    {
+      "feature": "Strain (min*Nm)",
+      "importance": 20.19
+    },
+    {
+      "feature": "Temp diff (K)",
+      "importance": 11.52
+    },
+    {
+      "feature": "Tool Wear",
+      "importance": 10.49
+    },
+    {
+      "feature": "Type L",
+      "importance": 5.96
+    },
+    {
+      "feature": "Type M",
+      "importance": 3.42
+    },
+    {
+      "feature": "Type H",
+      "importance": 3.0
+    }
+  ],
+  "dataset": {
+    "name": "AI4I 2020 Predictive Maintenance Dataset",
+    "source": "UCI Machine Learning Repository",
+    "size": 10000,
+    "features": [
+      "Type",
+      "Air temperature [K]",
+      "Process temperature [K]",
+      "Rotational speed [rpm]",
+      "Torque [Nm]",
+      "Tool wear [min]"
+    ],
+    "engineered_features": [
+      "Power [W] = Torque x RPM x 2pi/60",
+      "Temp diff [K] = Process temp - Air temp",
+      "Strain [min*Nm] = Tool wear x Torque"
+    ]
+  },
+  "baseline_metrics": {
+    "accuracy": 98.65,
+    "precision": 88.68,
+    "recall": 69.12,
+    "f1_score": 77.69
+  }
+}

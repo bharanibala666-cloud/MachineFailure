@@ -1,0 +1,81 @@
+Raw Sensor Features vs Physics-Informed Features
+Dataset    : dataset/ai4i2020.csv
+Train/Test : 80/20, stratified, random_state=42, threshold 0.5
+
+Physics features (computed from the same 6 raw inputs):
+  Power [W]       = Torque x RPM x 2pi/60
+  Temp diff [K]   = Process temp - Air temp
+  Strain [min*Nm] = Tool wear x Torque
+
+NOTE: TWF/HDF/PWF/OSF/RNF are sub-failure labels known only
+      AFTER a failure — using them is data leakage.
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Metric                   Leakage reference (11 features)            Raw XGBoost (original)    Physics XGBoost (our approach)   Physics Decision Tree (depth 6)
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Leakage                                            YES ⚠                                No                                No                                No
+Accuracy                                         99.80 %                           98.65 %                           99.05 %                           99.20 %
+Precision                                       100.00 %                           88.68 %                           92.98 %                          100.00 %
+Recall                                           94.12 %                           69.12 %                           77.94 %                           76.47 %
+F1-Score                                         96.97 %                           77.69 %                           84.80 %                           86.67 %
+CV F1 (5-fold)                                   98.20 %                           72.14 %                           83.41 %                           89.11 %
+CV Recall (5-fold)                               96.46 %                           62.24 %                           76.40 %                           80.83 %
+Missed failures                                        4                                21                                15                                16
+False alarms                                           0                                 6                                 4                                 0
+Inference Time (ms)                              7.45 ms                           8.35 ms                          11.08 ms                           3.39 ms
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+Leakage reference (11 features) -- Confusion Matrix:
+  TN=1932  FP=   0
+  FN=   4  TP=  64
+  Missed by failure type: TWF=2
+
+Raw XGBoost (original) -- Confusion Matrix:
+  TN=1926  FP=   6
+  FN=  21  TP=  47
+  Missed by failure type: TWF=9, HDF=5, PWF=3, OSF=2
+
+Physics XGBoost (our approach) -- Confusion Matrix:
+  TN=1928  FP=   4
+  FN=  15  TP=  53
+  Missed by failure type: TWF=9, HDF=3, PWF=1
+
+Physics Decision Tree (depth 6) -- Confusion Matrix:
+  TN=1932  FP=   0
+  FN=  16  TP=  52
+  Missed by failure type: TWF=9, HDF=5
+
+Depth-4 decision tree on physics features:
+|--- Strain (min*Nm) <= 10998.50
+|   |--- Power (W) <= 9003.98
+|   |   |--- Power (W) <= 3496.14
+|   |   |   |--- class: 1
+|   |   |--- Power (W) >  3496.14
+|   |   |   |--- Temp diff (K) <= 8.65
+|   |   |   |   |--- class: 0
+|   |   |   |--- Temp diff (K) >  8.65
+|   |   |   |   |--- class: 0
+|   |--- Power (W) >  9003.98
+|   |   |--- class: 1
+|--- Strain (min*Nm) >  10998.50
+|   |--- Type_L <= 0.50
+|   |   |--- Strain (min*Nm) <= 12128.50
+|   |   |   |--- Tool wear [min] <= 173.50
+|   |   |   |   |--- class: 1
+|   |   |   |--- Tool wear [min] >  173.50
+|   |   |   |   |--- class: 0
+|   |   |--- Strain (min*Nm) >  12128.50
+|   |   |   |--- class: 1
+|   |--- Type_L >  0.50
+|   |   |--- class: 1
+
+KEY FINDINGS
+- Physics features raise recall 69.12% -> 77.94% and F1 77.69% -> 84.80%,
+  using the SAME 6 sensor inputs and the SAME XGBoost settings.
+- Missed failures: 21 -> 15  |  False alarms: 6 -> 4
+- 5-fold CV F1: 72.14% -> 83.41% (the gain is not luck of one split)
+- A shallow tree rediscovers the documented physical limits:
+  Power ~3500 W / ~9000 W, Temp diff ~8.6 K, Strain ~11000 min*Nm.
+- Failures still missed by the physics model: TWF=9, HDF=3, PWF=1
+  TWF happens at a RANDOM time between 200-240 min of tool wear,
+  so no model can predict it exactly.
