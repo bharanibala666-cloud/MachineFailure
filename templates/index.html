@@ -7,10 +7,10 @@
 
     <title>Predictive Maintenance System</title>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
@@ -18,455 +18,232 @@
 
 <body>
 
-    <!-- HEADER NAV -->
-    <aside class="sidebar">
+    <!-- HEADER -->
+    <header class="site-header">
 
-        <div class="logo">
-            <div class="logo-icon">⚙</div>
-
-            <div>
-                <h2>PredictAI</h2>
-                <span>Maintenance System</span>
-            </div>
-        </div>
+        <a href="#dashboard" class="logo" aria-label="PredictAI home">⚙</a>
 
         <nav>
-            <a href="#dashboard" class="active">
-                <span>▦</span> Dashboard
-            </a>
-
-            <a href="#prediction">
-                <span>⌁</span> Prediction
-            </a>
-
-            <a href="#analytics">
-                <span>◫</span> Analytics
-            </a>
-
-            <a href="#models">
-                <span>◇</span> Models
-            </a>
+            <a href="#dashboard" class="active">Dashboard</a>
+            <a href="#prediction">Prediction</a>
+            <a href="#analytics">Analytics</a>
+            <a href="#models">Models</a>
         </nav>
 
-        <div class="sidebar-bottom">
-            <div class="status-dot"></div>
-            <div>
-                <b>System Online</b>
-                <small>Model Ready</small>
-            </div>
+        <div class="header-status">
+            <span class="status-dot"></span>
+            <span>Model ready</span>
         </div>
 
-    </aside>
+    </header>
 
 
-    <!-- MAIN CONTENT -->
-    <main class="main">
+    <main>
 
-        <!-- TOP BAR -->
-        <header class="topbar">
-            <div>
-                <p class="small-title">PREDICTIVE MAINTENANCE</p>
-                <h1>Machine Health Monitoring</h1>
-            </div>
-        </header>
-
-
-        <!-- DASHBOARD -->
-        <section id="dashboard">
-
-            <!-- STAT CARDS -->
-            <div class="stats-grid">
-
-                <div class="stat-card">
-                    <div class="stat-icon blue">🌡️</div>
-
-                    <div>
-                        <p>Air Temperature</p>
-
-                        <h2>
-                            {% if air_temperature %}
-                                {{ air_temperature }}
-                            {% else %}
-                                --
-                            {% endif %}
-                            <small>K</small>
-                        </h2>
-                    </div>
-                </div>
+        <!-- HERO -->
+        <section id="dashboard" class="hero">
+            <p class="label">Predictive Maintenance</p>
+            <h1>Machine Health Monitoring</h1>
+            <p class="hero-sub">
+                Physics-informed failure prediction from six sensor readings.
+                Power, temperature gap and strain are computed before the model sees the data.
+            </p>
+        </section>
 
 
-                <div class="stat-card">
-                    <div class="stat-icon purple">⚙️</div>
+        <!-- STAT CELLS -->
+        <section class="stats-grid">
 
-                    <div>
-                        <p>Rotational Speed</p>
-
-                        <h2>
-                            {% if rotational_speed %}
-                                {{ rotational_speed }}
-                            {% else %}
-                                --
-                            {% endif %}
-                            <small>RPM</small>
-                        </h2>
-                    </div>
-                </div>
-
-
-                <div class="stat-card">
-                    <div class="stat-icon orange">🔧</div>
-
-                    <div>
-                        <p>Torque</p>
-
-                        <h2>
-                            {% if torque %}
-                                {{ torque }}
-                            {% else %}
-                                --
-                            {% endif %}
-                            <small>Nm</small>
-                        </h2>
-                    </div>
-                </div>
-
-
-                <div class="stat-card">
-                    <div class="stat-icon green">🛠️</div>
-
-                    <div>
-                        <p>Tool Wear</p>
-
-                        <h2>
-                            {% if tool_wear %}
-                                {{ tool_wear }}
-                            {% else %}
-                                --
-                            {% endif %}
-                            <small>min</small>
-                        </h2>
-                    </div>
-                </div>
-
+            <div class="cell stat">
+                <p class="label">Air Temperature</p>
+                <p class="stat-value">{% if air_temperature %}{{ air_temperature }}{% else %}—{% endif %}<small>K</small></p>
             </div>
 
+            <div class="cell stat">
+                <p class="label">Rotational Speed</p>
+                <p class="stat-value">{% if rotational_speed %}{{ rotational_speed }}{% else %}—{% endif %}<small>RPM</small></p>
+            </div>
 
-            <!-- PREDICTION SECTION -->
-            <div class="dashboard-grid" id="prediction">
+            <div class="cell stat">
+                <p class="label">Torque</p>
+                <p class="stat-value">{% if torque %}{{ torque }}{% else %}—{% endif %}<small>Nm</small></p>
+            </div>
 
-                <!-- INPUT PANEL -->
-                <div class="panel input-panel">
+            <div class="cell stat">
+                <p class="label">Tool Wear</p>
+                <p class="stat-value">{% if tool_wear %}{{ tool_wear }}{% else %}—{% endif %}<small>min</small></p>
+            </div>
 
-                    <div class="panel-heading">
-                        <div>
-                            <span class="section-label">PREDICTION</span>
-                            <h2>Machine Parameters</h2>
+        </section>
+
+
+        <!-- PREDICTION -->
+        <section class="split" id="prediction">
+
+            <!-- INPUTS -->
+            <div class="cell input-panel">
+
+                <p class="label">Machine Parameters</p>
+
+                <form method="POST">
+
+                    <div class="input-grid">
+
+                        <div class="input-group">
+                            <label for="machine_type">Machine Type</label>
+                            <select id="machine_type" name="machine_type" required>
+                                <option value="L" {% if machine_type == 'L' %}selected{% endif %}>L — Low</option>
+                                <option value="M" {% if machine_type == 'M' or not machine_type %}selected{% endif %}>M — Medium</option>
+                                <option value="H" {% if machine_type == 'H' %}selected{% endif %}>H — High</option>
+                            </select>
                         </div>
 
-                        <div class="machine-icon">⚙</div>
+                        <div class="input-group">
+                            <label for="air_temperature">Air Temperature <span>K</span></label>
+                            <input id="air_temperature" type="number" step="0.01" name="air_temperature" min="290" max="310" placeholder="300" value="{{ air_temperature if air_temperature else '' }}" required>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="process_temperature">Process Temperature <span>K</span></label>
+                            <input id="process_temperature" type="number" step="0.01" name="process_temperature" min="300" max="320" placeholder="310" value="{{ process_temperature if process_temperature else '' }}" required>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="rotational_speed">Rotational Speed <span>RPM</span></label>
+                            <input id="rotational_speed" type="number" name="rotational_speed" min="1000" max="3000" placeholder="1500" value="{{ rotational_speed if rotational_speed else '' }}" required>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="torque">Torque <span>Nm</span></label>
+                            <input id="torque" type="number" step="0.01" name="torque" min="0" max="100" placeholder="40" value="{{ torque if torque else '' }}" required>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="tool_wear">Tool Wear <span>min</span></label>
+                            <input id="tool_wear" type="number" name="tool_wear" min="0" max="300" placeholder="100" value="{{ tool_wear if tool_wear else '' }}" required>
+                        </div>
+
                     </div>
 
-
-                    <form method="POST">
-
-                        <div class="input-grid">
-
-                            <div class="input-group">
-
-                                <label>
-                                    Machine Type
-                                </label>
-
-                                <select name="machine_type" required>
-                                    <option value="L" {% if machine_type == 'L' %}selected{% endif %}>L — Low</option>
-                                    <option value="M" {% if machine_type == 'M' or not machine_type %}selected{% endif %}>M — Medium</option>
-                                    <option value="H" {% if machine_type == 'H' %}selected{% endif %}>H — High</option>
-                                </select>
-
-                            </div>
-
-
-                            <div class="input-group">
-
-                                <label>
-                                    Air Temperature
-                                    <span>[K]</span>
-                                </label>
-
-                                <input type="number" step="0.01" name="air_temperature" min="290" max="310" placeholder="e.g. 300" value="{{ air_temperature if air_temperature else '' }}" required>
-
-                            </div>
-
-
-                            <div class="input-group">
-
-                                <label>
-                                    Process Temperature
-                                    <span>[K]</span>
-                                </label>
-
-                                <input type="number" step="0.01" name="process_temperature" min="300" max="320" placeholder="e.g. 310" value="{{ process_temperature if process_temperature else '' }}" required>
-
-                            </div>
-
-
-                            <div class="input-group">
-
-                                <label>
-                                    Rotational Speed
-                                    <span>[RPM]</span>
-                                </label>
-
-                                <input type="number" name="rotational_speed" min="1000" max="3000" placeholder="e.g. 1500" value="{{ rotational_speed if rotational_speed else '' }}" required>
-
-                            </div>
-
-
-                            <div class="input-group">
-
-                                <label>
-                                    Torque
-                                    <span>[Nm]</span>
-                                </label>
-
-                                <input type="number" step="0.01" name="torque" min="0" max="100" placeholder="e.g. 40" value="{{ torque if torque else '' }}" required>
-
-                            </div>
-
-
-                            <div class="input-group">
-
-                                <label>
-                                    Tool Wear
-                                    <span>[min]</span>
-                                </label>
-
-                                <input type="number" name="tool_wear" min="0" max="300" placeholder="e.g. 100" value="{{ tool_wear if tool_wear else '' }}" required>
-
-                            </div>
-
-                        </div>
-
-
+                    <div class="form-actions">
                         <button type="submit" class="predict-btn">
-                            <span>Analyze Machine Health</span>
-                            <span class="arrow">→</span>
+                            <span>Analyze machine health</span>
+                            <span aria-hidden="true">→</span>
                         </button>
+                    </div>
 
-                    </form>
+                </form>
 
+            </div>
+
+
+            <!-- RESULT -->
+            <div class="cell result-panel">
+
+                <p class="label">Result</p>
+
+                {% if error %}
+                <div class="error-alert" role="alert">
+                    <strong>Error</strong>
+                    <p>{{ error }}</p>
                 </div>
+                {% endif %}
 
+                {% if result %}
 
-                <!-- RESULT PANEL -->
-                <div class="panel result-panel">
-
-                    <div class="panel-heading">
-
-                        <div>
-                            <span class="section-label">AI RESULT</span>
-                            <h2>Machine Health</h2>
-                        </div>
-
-                        <div class="ai-icon">✦</div>
-
-                    </div>
-
-                    {% if error %}
-                    <div class="error-alert">
-                        <span class="error-icon">⚠</span>
-                        <div>
-                            <strong>Error</strong>
-                            <p>{{ error }}</p>
-                        </div>
-                    </div>
-                    {% endif %}
-
-
-                    {% if result %}
-
-                    <div class="result-content">
-
-                        {% if result == "Machine Failure" %}
-
-                        <div class="result-circle danger">
-                            ⚠
-                        </div>
-
-                        <h3 class="danger-text">
-                            Machine Failure
-                        </h3>
-
-                        <p class="result-message">
-                            The model predicts a possible machine failure.
-                        </p>
-
-                        {% else %}
-
-                        <div class="result-circle safe">
-                            ✓
-                        </div>
-
-                        <h3 class="safe-text">
-                            No Machine Failure
-                        </h3>
-
-                        <p class="result-message">
-                            The machine is predicted to operate normally.
-                        </p>
-
-                        {% endif %}
-
-
-                        <div class="probability-box">
-
-                            <div class="probability-header">
-                                <span>Failure Probability</span>
-
-                                <strong>
-                                    {{ "%.2f"|format(probability) }}%
-                                </strong>
-                            </div>
-
-                            <div class="progress">
-                                <div
-                                    class="progress-bar"
-                                    style="width: {{ probability }}%;">
-                                </div>
-                            </div>
-
-                        </div>
-
-                        {% if failure_modes %}
-                        <div class="failure-modes">
-
-                            <div class="failure-modes-header">
-                                <span>Why? — Physics Failure-Mode Check</span>
-                            </div>
-
-                            {% for mode in failure_modes %}
-                            <div class="mode-row mode-{{ mode.status }}">
-                                <div class="mode-main">
-                                    <strong>{{ mode.name }} <small>{{ mode.code }}</small></strong>
-                                    <p>{{ mode.message }}</p>
-                                </div>
-                                <span class="mode-chip">
-                                    {% if mode.status == 'risk' %}At risk{% elif mode.status == 'warning' %}Near limit{% else %}OK{% endif %}
-                                </span>
-                            </div>
-                            {% endfor %}
-
-                        </div>
-                        {% endif %}
-
-                    </div>
-
-                    {% else %}
-
-                    <div class="empty-result">
-
-                        <div class="empty-icon">
-                            ✦
-                        </div>
-
-                        <h3>Ready for Prediction</h3>
-
+                <div class="verdict {% if result == 'Machine Failure' %}verdict-danger{% else %}verdict-safe{% endif %}">
+                    <span class="verdict-mark">{% if result == 'Machine Failure' %}!{% else %}✓{% endif %}</span>
+                    <div>
+                        <h2>{{ result }}</h2>
                         <p>
-                            Enter machine parameters and run the AI model
-                            to analyze machine health.
+                            {% if result == 'Machine Failure' %}
+                                The model predicts a possible machine failure.
+                            {% else %}
+                                The machine is predicted to operate normally.
+                            {% endif %}
                         </p>
-
                     </div>
+                </div>
 
-                    {% endif %}
+                <div class="probability">
+                    <div class="probability-header">
+                        <span class="label">Failure probability</span>
+                        <strong>{{ "%.2f"|format(probability) }}%</strong>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar" style="width: {{ probability }}%;"></div>
+                    </div>
+                </div>
+
+                {% if failure_modes %}
+                <div class="failure-modes">
+
+                    <p class="label">Why — physics failure-mode check</p>
+
+                    {% for mode in failure_modes %}
+                    <div class="mode-row mode-{{ mode.status }}">
+                        <div class="mode-main">
+                            <strong>{{ mode.name }} <small>{{ mode.code }}</small></strong>
+                            <p>{{ mode.message }}</p>
+                        </div>
+                        <span class="mode-chip">
+                            {% if mode.status == 'risk' %}At risk{% elif mode.status == 'warning' %}Near limit{% else %}OK{% endif %}
+                        </span>
+                    </div>
+                    {% endfor %}
 
                 </div>
+                {% endif %}
+
+                {% elif not error %}
+
+                <div class="empty-result">
+                    <h2>Ready for prediction</h2>
+                    <p>Enter machine parameters and run the model to analyze machine health.</p>
+                </div>
+
+                {% endif %}
 
             </div>
 
         </section>
 
 
-        <!-- ANALYTICS -->
         {% if result %}
 
+        <!-- ANALYTICS -->
         <section id="analytics">
 
             <div class="section-header">
-
-                <div>
-                    <span class="section-label">ANALYTICS</span>
-
-                    <h2>Machine & Model Analytics</h2>
-                </div>
-
-                <span class="data-badge">
-                    Live Prediction
-                </span>
-
+                <p class="label">Analytics</p>
+                <h2>Machine &amp; model analytics</h2>
             </div>
-
 
             <div class="charts-grid">
 
-                <!-- SENSOR GRAPH -->
-                <div class="chart-panel">
-
+                <div class="cell chart-panel">
                     <div class="chart-title">
-
-                        <div>
-                            <h3>Machine Sensor Values</h3>
-                            <p>Current input parameters</p>
-                        </div>
-
-                        <span>📊</span>
-
+                        <h3>Machine sensor values</h3>
+                        <p>Current input parameters</p>
                     </div>
-
                     <canvas id="sensorChart"></canvas>
-
                 </div>
 
-
-                <!-- MODEL GRAPH -->
-                <div class="chart-panel">
-
+                <div class="cell chart-panel">
                     <div class="chart-title">
-
-                        <div>
-                            <h3>Model F1 Score</h3>
-                            <p>F1 balances missed failures and false alarms</p>
-                        </div>
-
-                        <span>📈</span>
-
+                        <h3>Model F1 score</h3>
+                        <p>F1 balances missed failures and false alarms</p>
                     </div>
-
                     <canvas id="modelChart"></canvas>
-
                 </div>
 
-            </div>
-
-
-            <!-- FEATURE IMPORTANCE -->
-            <div class="chart-panel full-chart">
-
-                <div class="chart-title">
-
-                    <div>
-                        <h3>Feature Importance — Physics-Informed XGBoost</h3>
-
-                        <p>
-                            Power, Temp diff and Strain are computed from the raw sensors
-                        </p>
+                <div class="cell chart-panel full-chart">
+                    <div class="chart-title">
+                        <h3>Feature importance — physics-informed XGBoost</h3>
+                        <p>Power, Temp diff and Strain (green) are computed from the raw sensors</p>
                     </div>
-
-                    <span>🎯</span>
-
+                    <canvas id="featureChart"></canvas>
                 </div>
-
-                <canvas id="featureChart"></canvas>
 
             </div>
 
@@ -477,38 +254,32 @@
         <section id="models">
 
             <div class="section-header">
-
-                <div>
-                    <span class="section-label">MODEL EVALUATION</span>
-
-                    <h2>Performance Summary</h2>
-                </div>
-
+                <p class="label">Model Evaluation</p>
+                <h2>Performance summary</h2>
             </div>
-
 
             <div class="metrics-grid">
 
-                <div class="metric-card">
-                    <span>Accuracy</span>
+                <div class="cell metric">
+                    <p class="label">Accuracy</p>
                     <strong>{{ config.metrics.accuracy }}%</strong>
                     <small>was {{ config.baseline_metrics.accuracy }}% with raw features</small>
                 </div>
 
-                <div class="metric-card">
-                    <span>Precision</span>
+                <div class="cell metric">
+                    <p class="label">Precision</p>
                     <strong>{{ config.metrics.precision }}%</strong>
                     <small>was {{ config.baseline_metrics.precision }}% with raw features</small>
                 </div>
 
-                <div class="metric-card">
-                    <span>Recall</span>
+                <div class="cell metric">
+                    <p class="label">Recall</p>
                     <strong>{{ config.metrics.recall }}%</strong>
                     <small>was {{ config.baseline_metrics.recall }}% with raw features</small>
                 </div>
 
-                <div class="metric-card">
-                    <span>F1 Score</span>
+                <div class="cell metric">
+                    <p class="label">F1 Score</p>
                     <strong>{{ config.metrics.f1_score }}%</strong>
                     <small>was {{ config.baseline_metrics.f1_score }}% with raw features</small>
                 </div>
@@ -519,234 +290,100 @@
 
 
         <script>
+            const INK = "#232323";
+            const GREY = "#D9D9D9";
+            const MINT = "#A1FFCB";
+
+            Chart.defaults.font.family = "'Inter Tight', Arial, sans-serif";
+            Chart.defaults.font.size = 12;
+            Chart.defaults.color = INK;
+            Chart.defaults.animation = false;
+            Chart.defaults.plugins.legend.display = false;
+
+            const gridLines = { color: "#E0E0E0" };
+            const noGrid = { display: false };
 
             /* ---------------- SENSOR CHART ---------------- */
-
-            new Chart(
-                document.getElementById("sensorChart"),
-                {
-                    type: "bar",
-
-                    data: {
-
-                        labels: [
-                            "Air Temp",
-                            "Process Temp",
-                            "Speed",
-                            "Torque",
-                            "Tool Wear"
+            new Chart(document.getElementById("sensorChart"), {
+                type: "bar",
+                data: {
+                    labels: ["Air Temp", "Process Temp", "Speed", "Torque", "Tool Wear"],
+                    datasets: [{
+                        label: "Current Value",
+                        data: [
+                            {{ air_temperature }},
+                            {{ process_temperature }},
+                            {{ rotational_speed }},
+                            {{ torque }},
+                            {{ tool_wear }}
                         ],
-
-                        datasets: [{
-                            label: "Current Value",
-                            data: [
-                                {{ air_temperature }},
-                                {{ process_temperature }},
-                                {{ rotational_speed }},
-                                {{ torque }},
-                                {{ tool_wear }}
-                            ],
-                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                            borderColor: 'rgba(102, 126, 234, 1)',
-                            borderWidth: 2,
-                            borderRadius: 6,
-                        }]
-
-                    },
-
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: true,
-                        plugins: {
-                            legend: {
-                                display: false
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                grid: {
-                                    color: 'rgba(0, 0, 0, 0.05)'
-                                },
-                                ticks: {
-                                    font: {
-                                        family: 'Inter',
-                                        size: 11
-                                    }
-                                }
-                            },
-                            x: {
-                                grid: {
-                                    display: false
-                                },
-                                ticks: {
-                                    font: {
-                                        family: 'Inter',
-                                        size: 11
-                                    }
-                                }
-                            }
-                        }
+                        backgroundColor: INK,
+                        borderWidth: 0,
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: { beginAtZero: true, grid: gridLines, border: { display: false } },
+                        x: { grid: noGrid, border: { color: INK } }
                     }
-
                 }
-            );
-
+            });
 
             /* ---------------- MODEL CHART ---------------- */
-
-            new Chart(
-                document.getElementById("modelChart"),
-                {
-                    type: "bar",
-
-                    data: {
-
-                        labels: {{ config.comparison_models | map(attribute='name') | list | tojson }},
-
-                        datasets: [{
-                            label: "F1 Score (%)",
-                            data: {{ config.comparison_models | map(attribute='f1_score') | list | tojson }},
-                            backgroundColor: 'rgba(118, 75, 162, 0.1)',
-                            borderColor: 'rgba(118, 75, 162, 1)',
-                            borderWidth: 2,
-                            borderRadius: 6,
-                        }]
-
-                    },
-
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: true,
-                        plugins: {
-                            legend: {
-                                display: false
-                            }
-                        },
-                        scales: {
-                            y: {
-                                min: 0,
-                                max: 100,
-                                grid: {
-                                    color: 'rgba(0, 0, 0, 0.05)'
-                                },
-                                ticks: {
-                                    font: {
-                                        family: 'Inter',
-                                        size: 11
-                                    }
-                                }
-                            },
-                            x: {
-                                grid: {
-                                    display: false
-                                },
-                                ticks: {
-                                    font: {
-                                        family: 'Inter',
-                                        size: 11
-                                    }
-                                }
-                            }
-                        }
+            const modelNames = {{ config.comparison_models | map(attribute='name') | list | tojson }};
+            new Chart(document.getElementById("modelChart"), {
+                type: "bar",
+                data: {
+                    labels: modelNames,
+                    datasets: [{
+                        label: "F1 Score (%)",
+                        data: {{ config.comparison_models | map(attribute='f1_score') | list | tojson }},
+                        backgroundColor: modelNames.map(n => n === "Physics XGBoost" ? INK : GREY),
+                        borderWidth: 0,
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: { min: 0, max: 100, grid: gridLines, border: { display: false } },
+                        x: { grid: noGrid, border: { color: INK } }
                     }
-
                 }
-            );
-
+            });
 
             /* ---------------- FEATURE IMPORTANCE ---------------- */
-
-            new Chart(
-                document.getElementById("featureChart"),
-                {
-                    type: "bar",
-
-                    data: {
-
-                        labels: {{ config.feature_importance | map(attribute='feature') | list | tojson }},
-
-                        datasets: [{
-
-                            label: "Importance (%)",
-
-                            data: {{ config.feature_importance | map(attribute='importance') | list | tojson }},
-                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                            borderColor: 'rgba(102, 126, 234, 1)',
-                            borderWidth: 2,
-                            borderRadius: 6,
-
-                        }]
-
-                    },
-
-                    options: {
-
-                        indexAxis: "y",
-
-                        responsive: true,
-                        maintainAspectRatio: true,
-
-                        plugins: {
-
-                            legend: {
-                                display: false
-                            }
-
-                        },
-
-                        scales: {
-
-                            x: {
-                                beginAtZero: true,
-                                grid: {
-                                    color: 'rgba(0, 0, 0, 0.05)'
-                                },
-                                ticks: {
-                                    font: {
-                                        family: 'Inter',
-                                        size: 11
-                                    }
-                                }
-                            },
-
-                            y: {
-                                grid: {
-                                    display: false
-                                },
-                                ticks: {
-                                    font: {
-                                        family: 'Inter',
-                                        size: 11
-                                    }
-                                }
-                            }
-
-                        }
-
+            const featureNames = {{ config.feature_importance | map(attribute='feature') | list | tojson }};
+            const physicsFeatures = ["Power (W)", "Strain (min*Nm)", "Temp diff (K)"];
+            new Chart(document.getElementById("featureChart"), {
+                type: "bar",
+                data: {
+                    labels: featureNames,
+                    datasets: [{
+                        label: "Importance (%)",
+                        data: {{ config.feature_importance | map(attribute='importance') | list | tojson }},
+                        backgroundColor: featureNames.map(n => physicsFeatures.includes(n) ? MINT : GREY),
+                        borderColor: INK,
+                        borderWidth: featureNames.map(n => physicsFeatures.includes(n) ? 1 : 0),
+                    }]
+                },
+                options: {
+                    indexAxis: "y",
+                    scales: {
+                        x: { beginAtZero: true, grid: gridLines, border: { display: false } },
+                        y: { grid: noGrid, border: { color: INK } }
                     }
-
                 }
-            );
-
+            });
         </script>
 
         {% endif %}
 
-
-        <footer>
-
-            <div>
-                <b>PredictAI</b> • Machine Learning-Based Predictive Maintenance
-            </div>
-
-            <div>
-                Powered by Physics-Informed XGBoost • AI4I 2020 Dataset
-            </div>
-
-        </footer>
-
     </main>
+
+
+    <footer>
+        <span>PredictAI — Machine learning-based predictive maintenance</span>
+        <span>Physics-informed XGBoost · AI4I 2020 dataset</span>
+    </footer>
 
 </body>
 </html>

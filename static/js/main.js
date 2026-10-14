@@ -165,8 +165,7 @@ function showFormError(message) {
     
     form.insertBefore(errorDiv, form.firstChild);
 
-    // Scroll to form error
-    errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    errorDiv.scrollIntoView({ block: 'center' });
 
     // Remove after 5 seconds
     setTimeout(() => {
@@ -179,35 +178,15 @@ function showFormError(message) {
 
 function showLoadingState() {
     const submitButton = document.querySelector('.predict-btn');
-    
+
     if (!submitButton) return;
 
-    // Disable button
     submitButton.disabled = true;
-    submitButton.classList.add('loading');
 
-    // Change button text
     const buttonText = submitButton.querySelector('span:first-child');
     if (buttonText) {
-        buttonText.textContent = 'Analyzing...';
+        buttonText.textContent = 'Analyzing…';
     }
-
-    // Create loading overlay
-    const overlay = document.createElement('div');
-    overlay.className = 'loading-overlay';
-    overlay.innerHTML = `
-        <div class="loading-spinner">
-            <div class="spinner"></div>
-            <p>Analyzing Machine Health...</p>
-        </div>
-    `;
-    
-    document.body.appendChild(overlay);
-
-    // Show overlay with animation
-    setTimeout(() => {
-        overlay.classList.add('visible');
-    }, 10);
 }
 
 
@@ -228,8 +207,8 @@ function addResetButton() {
     resetButton.type = 'button';
     resetButton.className = 'reset-btn';
     resetButton.innerHTML = `
-        <span>Clear Form</span>
-        <span class="reset-icon">↻</span>
+        <span>Clear</span>
+        <span aria-hidden="true">↻</span>
     `;
 
     // Insert after submit button
@@ -254,206 +233,33 @@ function addResetButton() {
         if (formError) {
             formError.remove();
         }
-
-        // Add feedback animation
-        resetButton.classList.add('reset-active');
-        setTimeout(() => {
-            resetButton.classList.remove('reset-active');
-        }, 300);
     });
 }
 
 
-// ==================== SMOOTH SCROLLING ====================
+// ==================== NAVIGATION ====================
 
-// Smooth scroll for navigation links
+// Highlight the nav link of the section currently in view
 document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('nav a').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            const targetId = this.getAttribute('href');
-            const targetSection = document.querySelector(targetId);
-            
-            if (targetSection) {
-                targetSection.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-                
-                // Update active link
-                document.querySelectorAll('nav a').forEach(link => {
-                    link.classList.remove('active');
-                });
-                this.classList.add('active');
-            }
-        });
-    });
+    const links = document.querySelectorAll('.site-header nav a');
+    const sections = document.querySelectorAll('section[id]');
 
-    // Intersection Observer for scroll animations
-    const observerOptions = {
-        threshold: 0.1,
-        rootMargin: '0px 0px -100px 0px'
-    };
-
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('is-visible');
-            }
-        });
-    }, observerOptions);
-
-    // Observe sections for animation
-    document.querySelectorAll('#analytics, #models').forEach(section => {
-        section.classList.add('fade-in-section');
-        observer.observe(section);
-    });
-
-    // Update active nav on scroll
-    window.addEventListener('scroll', () => {
-        let current = '';
-        const sections = document.querySelectorAll('section');
-        
+    function updateActiveLink() {
+        let current = 'dashboard';
         sections.forEach(section => {
-            const sectionTop = section.offsetTop;
-            const sectionHeight = section.clientHeight;
-            if (pageYOffset >= (sectionTop - 150)) {
-                current = section.getAttribute('id');
+            if (window.scrollY >= section.offsetTop - 120) {
+                current = section.id;
             }
         });
-
-        document.querySelectorAll('nav a').forEach(link => {
-            link.classList.remove('active');
-            if (link.getAttribute('href') === '#' + current) {
-                link.classList.add('active');
-            }
-        });
-    });
-});
-
-
-// ==================== ENHANCED ANIMATIONS ====================
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Animate charts when they're created
-    animateCharts();
-    
-    // Add ripple effect to buttons
-    addRippleEffect();
-    
-    // Enhanced scroll reveal
-    enhancedScrollReveal();
-});
-
-function animateCharts() {
-    // Chart.js animations are already configured in the HTML
-    // But we can add entrance animations to canvas elements
-    const canvases = document.querySelectorAll('canvas');
-    canvases.forEach((canvas, index) => {
-        canvas.style.opacity = '0';
-        canvas.style.transform = 'translateY(20px)';
-        
-        setTimeout(() => {
-            canvas.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-            canvas.style.opacity = '1';
-            canvas.style.transform = 'translateY(0)';
-        }, 400 + (index * 100));
-    });
-}
-
-function addRippleEffect() {
-    const buttons = document.querySelectorAll('.predict-btn, .reset-btn');
-    
-    buttons.forEach(button => {
-        button.addEventListener('click', function(e) {
-            // Only add ripple if not disabled
-            if (this.disabled) return;
-            
-            const ripple = document.createElement('span');
-            ripple.className = 'ripple';
-            
-            const rect = this.getBoundingClientRect();
-            const size = Math.max(rect.width, rect.height);
-            const x = e.clientX - rect.left - size / 2;
-            const y = e.clientY - rect.top - size / 2;
-            
-            ripple.style.width = ripple.style.height = size + 'px';
-            ripple.style.left = x + 'px';
-            ripple.style.top = y + 'px';
-            
-            this.appendChild(ripple);
-            
-            setTimeout(() => {
-                ripple.remove();
-            }, 600);
-        });
-    });
-}
-
-function enhancedScrollReveal() {
-    const observerOptions = {
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px'
-    };
-
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('is-visible');
-                
-                // Stagger child elements if they exist
-                const children = entry.target.querySelectorAll('.chart-panel, .metric-card');
-                children.forEach((child, index) => {
-                    setTimeout(() => {
-                        child.style.opacity = '1';
-                        child.style.transform = 'translateY(0)';
-                    }, index * 100);
-                });
-            }
-        });
-    }, observerOptions);
-
-    // Observe all sections
-    document.querySelectorAll('section').forEach(section => {
-        if (!section.classList.contains('fade-in-section')) {
-            section.classList.add('fade-in-section');
+        // The last section may be too short to reach the top of the viewport
+        if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 2 && sections.length) {
+            current = sections[sections.length - 1].id;
         }
-        observer.observe(section);
-    });
-}
-
-
-// ==================== ENHANCED FORM INTERACTIONS ====================
-
-// Add floating label effect
-document.addEventListener('DOMContentLoaded', function() {
-    const inputs = document.querySelectorAll('.input-group input, .input-group select');
-    
-    inputs.forEach(input => {
-        // Add focus class for animations
-        input.addEventListener('focus', function() {
-            this.parentElement.classList.add('input-focused');
+        links.forEach(link => {
+            link.classList.toggle('active', link.getAttribute('href') === '#' + current);
         });
-        
-        input.addEventListener('blur', function() {
-            this.parentElement.classList.remove('input-focused');
-        });
-    });
-});
-
-
-// ==================== PROGRESS BAR ANIMATION ====================
-
-// Animate progress bar when it appears
-document.addEventListener('DOMContentLoaded', function() {
-    const progressBar = document.querySelector('.progress-bar');
-    
-    if (progressBar) {
-        // Trigger reflow to restart animation
-        progressBar.style.animation = 'none';
-        
-        setTimeout(() => {
-            progressBar.style.animation = null;
-        }, 10);
     }
+
+    window.addEventListener('scroll', updateActiveLink, { passive: true });
+    updateActiveLink();
 });
